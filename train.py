@@ -1,8 +1,8 @@
-from users import RealUser, RuleBasedUserSimulator
-from users.error_model_controller import ErrorModelController
-from dm.agents import DQNAgent
-from dm.dst import StateTracker
-from utils.util import remove_empty_slots
+from dialogue_system.users import RealUser, RuleBasedUserSimulator
+from dialogue_system.users.error_model_controller import ErrorModelController
+from dialogue_system.dm.agents import DQNAgent
+from dialogue_system.dm.dst import StateTracker
+from dialogue_system.utils.util import remove_empty_slots
 
 import pickle
 import argparse
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     params = vars(args)
 
     # Load params json into dict
-    PARAMS_FILE_PATH = 'params/params.json'
+    PARAMS_FILE_PATH = 'dialogue_system/params/params.json'
     if len(params['params_path']) > 0:
         params_file = params['params_path']
     else:

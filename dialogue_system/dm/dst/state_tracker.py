@@ -1,7 +1,7 @@
-from dm.db_query import DBQuery
-from utils.util import convert_list_to_dict
-from dialogue_config import all_intents, all_slots, usersim_default_key
-import constants as const
+from dialogue_system.dm.db_query import DBQuery
+from dialogue_system.utils.util import convert_list_to_dict
+from dialogue_system.dialogue_config import all_intents, all_slots, usersim_default_key
+import dialogue_system.constants as const
 import numpy as np
 import copy
 

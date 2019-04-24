@@ -1,11 +1,11 @@
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
-import constants as const
+import dialogue_system.constants as const
 import random
 import copy
 import numpy as np
-from dialogue_config import rule_requests, agent_actions
+from dialogue_system.dialogue_config import rule_requests, agent_actions
 import re
 
 

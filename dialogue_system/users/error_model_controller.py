@@ -1,6 +1,6 @@
 import random
-from dialogue_config import usersim_intents
-import constants as const
+from dialogue_system.dialogue_config import usersim_intents
+import dialogue_system.constants as const
 
 
 class ErrorModelController:

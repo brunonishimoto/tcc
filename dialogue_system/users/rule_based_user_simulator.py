@@ -1,6 +1,6 @@
-from dialogue_config import usersim_default_key, usersim_required_init_inform_keys, no_query_keys
-from utils.util import reward_function
-import constants as const
+from dialogue_system.dialogue_config import usersim_default_key, usersim_required_init_inform_keys, no_query_keys
+from dialogue_system.utils.util import reward_function
+import dialogue_system.constants as const
 import random
 import copy
 

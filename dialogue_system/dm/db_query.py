@@ -1,7 +1,7 @@
 from collections import defaultdict
-from dialogue_config import no_query_keys, usersim_default_key
+from dialogue_system.dialogue_config import no_query_keys, usersim_default_key
 import copy
-import constants as const
+import dialogue_system.constants as const
 
 
 class DBQuery:
