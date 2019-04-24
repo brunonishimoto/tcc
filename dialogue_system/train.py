@@ -11,32 +11,32 @@ import math
 
 
 if __name__ == "__main__":
-    # Can provide constants file path in args OR run it as is and change 'CONSTANTS_FILE_PATH' below
-    # 1) In terminal: python train.py --constants_path "constants.json"
+    # Can provide params file path in args OR run it as is and change 'PARAMS_FILE_PATH' below
+    # 1) In terminal: python train.py --params_path "params/params.json"
     # 2) Run this file as is
     parser = argparse.ArgumentParser()
-    parser.add_argument('--constants_path', dest='constants_path', type=str, default='')
+    parser.add_argument('--params_path', dest='params_path', type=str, default='')
     args = parser.parse_args()
     params = vars(args)
 
-    # Load constants json into dict
-    CONSTANTS_FILE_PATH = 'constants.json'
-    if len(params['constants_path']) > 0:
-        constants_file = params['constants_path']
+    # Load params json into dict
+    PARAMS_FILE_PATH = 'params/params.json'
+    if len(params['params_path']) > 0:
+        params_file = params['params_path']
     else:
-        constants_file = CONSTANTS_FILE_PATH
+        params_file = PARAMS_FILE_PATH
 
-    with open(constants_file) as f:
-        constants = json.load(f)
+    with open(params_file) as f:
+        params = json.load(f)
 
-    # Load file path constants
-    file_path_dict = constants['db_file_paths']
+    # Load file path params
+    file_path_dict = params['db_file_paths']
     DATABASE_FILE_PATH = file_path_dict['database']
     DICT_FILE_PATH = file_path_dict['dict']
     USER_GOALS_FILE_PATH = file_path_dict['user_goals']
 
-    # Load run constants
-    run_dict = constants['run']
+    # Load run params
+    run_dict = params['run']
     USE_USERSIM = run_dict['usersim']
     WARMUP_MEM = run_dict['warmup_mem']
     NUM_EP_TRAIN = run_dict['num_ep_run']
@@ -59,12 +59,12 @@ if __name__ == "__main__":
 
     # Init. Objects
     if USE_USERSIM:
-        user = RuleBasedUserSimulator(user_goals, constants, database)
+        user = RuleBasedUserSimulator(user_goals, params, database)
     else:
-        user = RealUser(constants)
-    emc = ErrorModelController(db_dict, constants)
-    state_tracker = StateTracker(database, constants)
-    dqn_agent = DQNAgent(state_tracker.get_state_size(), constants)
+        user = RealUser(params)
+    emc = ErrorModelController(db_dict, params)
+    state_tracker = StateTracker(database, params)
+    dqn_agent = DQNAgent(state_tracker.get_state_size(), params)
 
 
 def run_round(state, warmup=False):

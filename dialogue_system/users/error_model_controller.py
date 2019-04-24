@@ -1,42 +1,43 @@
 import random
 from dialogue_config import usersim_intents
+import constants as const
 
 
 class ErrorModelController:
     """Adds error to the user action."""
 
-    def __init__(self, db_dict, constants):
+    def __init__(self, db_dict, params):
         """
         The constructor for ErrorModelController.
 
-        Saves items in constants, etc.
+        Saves items in params, etc.
 
         Parameters:
             db_dict (dict): The database dict with format dict(string: list) where each key is the slot name and
                             the list is of possible values
-            constants (dict): Loaded constants in dict
+            params (dict): Loaded params in dict
         """
 
         self.movie_dict = db_dict
-        self.slot_error_prob = constants['emc']['slot_error_prob']
-        self.slot_error_mode = constants['emc']['slot_error_mode']  # [0, 3]
-        self.intent_error_prob = constants['emc']['intent_error_prob']
+        self.slot_error_prob = params['emc']['slot_error_prob']
+        self.slot_error_mode = params['emc']['slot_error_mode']  # [0, 3]
+        self.intent_error_prob = params['emc']['intent_error_prob']
         self.intents = usersim_intents
 
     def infuse_error(self, frame):
         """
         Takes a semantic frame/action as a dict and adds 'error'.
 
-        Given a dict/frame it adds error based on specifications in constants. It can either replace slot values,
+        Given a dict/frame it adds error based on specifications in params. It can either replace slot values,
         replace slot and its values, delete a slot or do all three. It can also randomize the intent.
 
         Parameters:
-            frame (dict): format dict('intent': '', 'inform_slots': {}, 'request_slots': {}, 'round': int,
+            frame (dict): format dicconst.INTENTntent': '', 'inform_slots': {}, 'request_slots': {}, 'round': int,
                           'speaker': 'User')
         """
 
-        informs_dict = frame['inform_slots']
-        for key in list(frame['inform_slots'].keys()):
+        informs_dict = frame[const.INFORM_SLOTS]
+        for key in list(frame[const.INFORM_SLOTS].keys()):
             assert key in self.movie_dict
             if random.random() < self.slot_error_prob:
                 if self.slot_error_mode == 0:  # replace the slot_value only
@@ -54,7 +55,7 @@ class ErrorModelController:
                     else:
                         self._slot_remove(key, informs_dict)
         if random.random() < self.intent_error_prob:  # add noise for intent level
-            frame['intent'] = random.choice(self.intents)
+            frame[const.INTENT] = random.choice(self.intents)
 
     def _slot_value_noise(self, key, informs_dict):
         """

@@ -1,6 +1,7 @@
 from dm.db_query import DBQuery
 from utils.util import convert_list_to_dict
 from dialogue_config import all_intents, all_slots, usersim_default_key
+import constants as const
 import numpy as np
 import copy
 
@@ -8,7 +9,7 @@ import copy
 class StateTracker:
     """Tracks the state of the episode/conversation and prepares the state representation for the agent."""
 
-    def __init__(self, database, constants):
+    def __init__(self, database, params):
         """
         The constructor of StateTracker.
 
@@ -17,7 +18,7 @@ class StateTracker:
 
         Parameters:
             database (dict): The database with format dict(long: dict)
-            constants (dict): Loaded constants in dict
+            params (dict): Loaded params in dict
 
         """
 
@@ -27,7 +28,7 @@ class StateTracker:
         self.num_intents = len(all_intents)
         self.slots_dict = convert_list_to_dict(all_slots)
         self.num_slots = len(all_slots)
-        self.max_round_num = constants['run']['max_round_num']
+        self.max_round_num = params['run']['max_round_num']
         self.none_state = np.zeros(self.get_state_size())
         self.reset()
 
@@ -75,16 +76,16 @@ class StateTracker:
 
         # Create one-hot of intents to represent the current user action
         user_act_rep = np.zeros((self.num_intents,))
-        user_act_rep[self.intents_dict[user_action['intent']]] = 1.0
+        user_act_rep[self.intents_dict[user_action[const.INTENT]]] = 1.0
 
         # Create bag of inform slots representation to represent the current user action
         user_inform_slots_rep = np.zeros((self.num_slots,))
-        for key in user_action['inform_slots'].keys():
+        for key in user_action[const.INFORM_SLOTS].keys():
             user_inform_slots_rep[self.slots_dict[key]] = 1.0
 
         # Create bag of request slots representation to represent the current user action
         user_request_slots_rep = np.zeros((self.num_slots,))
-        for key in user_action['request_slots'].keys():
+        for key in user_action[const.REQUEST_SLOTS].keys():
             user_request_slots_rep[self.slots_dict[key]] = 1.0
 
         # Create bag of filled_in slots based on the current_slots
@@ -95,18 +96,18 @@ class StateTracker:
         # Encode last agent intent
         agent_act_rep = np.zeros((self.num_intents,))
         if last_agent_action:
-            agent_act_rep[self.intents_dict[last_agent_action['intent']]] = 1.0
+            agent_act_rep[self.intents_dict[last_agent_action[const.INTENT]]] = 1.0
 
         # Encode last agent inform slots
         agent_inform_slots_rep = np.zeros((self.num_slots,))
         if last_agent_action:
-            for key in last_agent_action['inform_slots'].keys():
+            for key in last_agent_action[const.INFORM_SLOTS].keys():
                 agent_inform_slots_rep[self.slots_dict[key]] = 1.0
 
         # Encode last agent request slots
         agent_request_slots_rep = np.zeros((self.num_slots,))
         if last_agent_action:
-            for key in last_agent_action['request_slots'].keys():
+            for key in last_agent_action[const.REQUEST_SLOTS].keys():
                 agent_request_slots_rep[self.slots_dict[key]] = 1.0
 
         # Value representation of the round num
@@ -117,13 +118,14 @@ class StateTracker:
         turn_onehot_rep[self.round_num - 1] = 1.0
 
         # Representation of DB query results (scaled counts)
-        kb_count_rep = np.zeros((self.num_slots + 1,)) + db_results_dict['matching_all_constraints'] / 100.
+        kb_count_rep = np.zeros((self.num_slots + 1,)) + db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] / 100.
         for key in db_results_dict.keys():
             if key in self.slots_dict:
                 kb_count_rep[self.slots_dict[key]] = db_results_dict[key] / 100.
 
         # Representation of DB query results (binary)
-        kb_binary_rep = np.zeros((self.num_slots + 1,)) + np.sum(db_results_dict['matching_all_constraints'] > 0.)
+        kb_binary_rep = np.zeros((self.num_slots + 1,)) + \
+            np.sum(db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] > 0.)
         for key in db_results_dict.keys():
             if key in self.slots_dict:
                 kb_binary_rep[self.slots_dict[key]] = np.sum(db_results_dict[key] > 0.)
@@ -149,28 +151,28 @@ class StateTracker:
 
         """
 
-        if agent_action['intent'] == 'inform':
-            assert agent_action['inform_slots']
-            inform_slots = self.db_helper.fill_inform_slot(agent_action['inform_slots'], self.current_informs)
-            agent_action['inform_slots'] = inform_slots
-            assert agent_action['inform_slots']
-            key, value = list(agent_action['inform_slots'].items())[0]  # Only one
-            assert key != 'match_found'
-            assert value != 'PLACEHOLDER', 'KEY: {}'.format(key)
+        if agent_action[const.INTENT] == const.INFORM:
+            assert agent_action[const.INFORM_SLOTS]
+            inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], self.current_informs)
+            agent_action[const.INFORM_SLOTS] = inform_slots
+            assert agent_action[const.INFORM_SLOTS]
+            key, value = list(agent_action[const.INFORM_SLOTS].items())[0]  # Only one
+            assert key != const.MATCH_FOUND
+            assert value != const.PLACEHOLDER, 'KEY: {}'.format(key)
             self.current_informs[key] = value
         # If intent is match_found then fill the action informs with the matches informs (if there is a match)
-        elif agent_action['intent'] == 'match_found':
-            assert not agent_action['inform_slots'], 'Cannot inform and have intent of match found!'
+        elif agent_action[const.INTENT] == const.MATCH_FOUND:
+            assert not agent_action[const.INFORM_SLOTS], 'Cannot inform and have intent of match found!'
             db_results = self.db_helper.get_db_results(self.current_informs)
             if db_results:
                 # Arbitrarily pick the first value of the dict
                 key, value = list(db_results.items())[0]
-                agent_action['inform_slots'] = copy.deepcopy(value)
-                agent_action['inform_slots'][self.match_key] = str(key)
+                agent_action[const.INFORM_SLOTS] = copy.deepcopy(value)
+                agent_action[const.INFORM_SLOTS][self.match_key] = str(key)
             else:
-                agent_action['inform_slots'][self.match_key] = 'no match available'
-            self.current_informs[self.match_key] = agent_action['inform_slots'][self.match_key]
-        agent_action.update({'round': self.round_num, 'speaker': 'Agent'})
+                agent_action[const.INFORM_SLOTS][self.match_key] = const.NO_MATCH
+            self.current_informs[self.match_key] = agent_action[const.INFORM_SLOTS][self.match_key]
+        agent_action.update({const.ROUND: self.round_num, const.SPEAKER_TYPE: const.AGT_SPEAKER_VAL})
         self.history.append(agent_action)
 
     def update_state_user(self, user_action):
@@ -186,8 +188,8 @@ class StateTracker:
 
         """
 
-        for key, value in user_action['inform_slots'].items():
+        for key, value in user_action[const.INFORM_SLOTS].items():
             self.current_informs[key] = value
-        user_action.update({'round': self.round_num, 'speaker': 'User'})
+        user_action.update({const.ROUND: self.round_num, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
         self.history.append(user_action)
         self.round_num += 1

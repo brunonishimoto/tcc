@@ -1,18 +1,19 @@
-from dialogue_config import FAIL, SUCCESS, usersim_intents, all_slots
+from dialogue_config import usersim_intents, all_slots
 from utils.util import reward_function
+import constants as const
 
 
 class RealUser():
     """Connects a real user to the conversation through the console."""
 
-    def __init__(self, constants):
+    def __init__(self, params):
         """
         The constructor for User.
 
         Parameters:
-            constants (dict): Loaded constants as dict
+            params (dict): Loaded params as dict
         """
-        self.max_round = constants['run']['max_round_num']
+        self.max_round = params['run']['max_round_num']
 
     def reset(self):
         """
@@ -38,7 +39,7 @@ class RealUser():
             dict: The response of the user
         """
 
-        response = {'intent': '', 'inform_slots': {}, 'request_slots': {}}
+        response = {const.INTENT: '', const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
         while True:
             input_string = input('Response: ')
             chunks = input_string.split('/')
@@ -46,7 +47,7 @@ class RealUser():
             intent_correct = True
             if chunks[0] not in usersim_intents:
                 intent_correct = False
-            response['intent'] = chunks[0]
+            response[const.INTENT] = chunks[0]
 
             informs_correct = True
             if len(chunks[1]) > 0:
@@ -56,7 +57,7 @@ class RealUser():
                     if inf[0] not in all_slots:
                         informs_correct = False
                         break
-                    response['inform_slots'][inf[0]] = inf[1]
+                    response[const.INFORM_SLOTS][inf[0]] = inf[1]
 
             requests_correct = True
             if len(chunks[2]) > 0:
@@ -65,7 +66,7 @@ class RealUser():
                     if req not in all_slots:
                         requests_correct = False
                         break
-                    response['request_slots'][req] = 'UNK'
+                    response[const.REQUEST_SLOTS][req] = const.UNKNOWN
 
             if intent_correct and informs_correct and requests_correct:
                 break
@@ -101,32 +102,32 @@ class RealUser():
 
         # Assertions ----
         # No unk in agent action informs
-        for value in agent_action['inform_slots'].values():
-            assert value != 'UNK'
-            assert value != 'PLACEHOLDER'
+        for value in agent_action[const.INFORM_SLOTS].values():
+            assert value != const.UNKNOWN
+            assert value != const.PLACEHOLDER
         # No PLACEHOLDER in agent_action at all
-        for value in agent_action['request_slots'].values():
-            assert value != 'PLACEHOLDER'
+        for value in agent_action[const.REQUEST_SLOTS].values():
+            assert value != const.PLACEHOLDER
         # ---------------
 
         print('Agent Action: {}'.format(agent_action))
 
         done = False
-        user_response = {'intent': '', 'request_slots': {}, 'inform_slots': {}}
+        user_response = {const.INTENT: '', const.REQUEST_SLOTS: {}, const.INFORM_SLOTS: {}}
 
         # First check round num, if equal to max then fail
-        if agent_action['round'] == self.max_round:
-            success = FAIL
-            user_response['intent'] = 'done'
+        if agent_action[const.ROUND] == self.max_round:
+            success = const.FAILED_DIALOG
+            user_response[const.INTENT] = const.DONE
         else:
             user_response = self._return_response()
             success = self._return_success()
 
-        if success == FAIL or success == SUCCESS:
+        if success == const.FAILED_DIALOG or success == const.SUCCESS_DIALOG:
             done = True
 
-        assert 'UNK' not in user_response['inform_slots'].values()
-        assert 'PLACEHOLDER' not in user_response['request_slots'].values()
+        assert const.UNKNOWN not in user_response[const.INFORM_SLOTS].values()
+        assert const.PLACEHOLDER not in user_response[const.REQUEST_SLOTS].values()
 
         reward = reward_function(success, self.max_round)
 

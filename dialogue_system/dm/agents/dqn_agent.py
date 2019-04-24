@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+import constants as const
 import random
 import copy
 import numpy as np
@@ -15,19 +16,19 @@ import re
 class DQNAgent:
     """The DQN agent that interacts with the user."""
 
-    def __init__(self, state_size, constants):
+    def __init__(self, state_size, params):
         """
         The constructor of DQNAgent.
 
-        The constructor of DQNAgent which saves constants, sets up neural network graphs, etc.
+        The constructor of DQNAgent which saves params, sets up neural network graphs, etc.
 
         Parameters:
             state_size (int): The state representation size or length of numpy array
-            constants (dict): Loaded constants in dict
+            params (dict): Loaded params in dict
 
         """
 
-        self.C = constants['agent']
+        self.C = params['agent']
         self.memory = []
         self.memory_index = 0
         self.max_memory_size = self.C['max_mem_size']
@@ -70,7 +71,7 @@ class DQNAgent:
         """Resets the rule-based variables."""
 
         self.rule_current_slot_index = 0
-        self.rule_phase = 'not done'
+        self.rule_phase = const.NOT_DONE
 
     def get_action(self, state, use_rule=False):
         """
@@ -89,7 +90,6 @@ class DQNAgent:
             dict: The action/response itself
 
         """
-
         if self.eps > random.random():
             index = random.randint(0, self.num_actions - 1)
             action = self._map_index_to_action(index)
@@ -115,12 +115,13 @@ class DQNAgent:
         if self.rule_current_slot_index < len(self.rule_request_set):
             slot = self.rule_request_set[self.rule_current_slot_index]
             self.rule_current_slot_index += 1
-            rule_response = {'intent': 'request', 'inform_slots': {}, 'request_slots': {slot: 'UNK'}}
-        elif self.rule_phase == 'not done':
-            rule_response = {'intent': 'match_found', 'inform_slots': {}, 'request_slots': {}}
-            self.rule_phase = 'done'
-        elif self.rule_phase == 'done':
-            rule_response = {'intent': 'done', 'inform_slots': {}, 'request_slots': {}}
+            rule_response = {const.INTENT: const.REQUEST, const.INFORM_SLOTS: {},
+                             const.REQUEST_SLOTS: {slot: const.UNKNOWN}}
+        elif self.rule_phase == const.NOT_DONE:
+            rule_response = {const.INTENT: const.MATCH_FOUND, const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
+            self.rule_phase = const.DONE
+        elif self.rule_phase == const.DONE:
+            rule_response = {const.INTENT: const.DONE, const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
         else:
             raise Exception('Should not have reached this clause')
 

@@ -1,7 +1,6 @@
-from dialogue_config import usersim_default_key, FAIL, NO_OUTCOME, SUCCESS, usersim_required_init_inform_keys, \
-    no_query_keys
+from dialogue_config import usersim_default_key, usersim_required_init_inform_keys, no_query_keys
 from utils.util import reward_function
-
+import constants as const
 import random
 import copy
 
@@ -9,18 +8,18 @@ import copy
 class RuleBasedUserSimulator:
     """Simulates a real user, to train the agent with reinforcement learning."""
 
-    def __init__(self, goal_list, constants, database):
+    def __init__(self, goal_list, params, database):
         """
         The constructor for UserSimulator. Sets dialogue config variables.
 
         Parameters:
             goal_list (list): User goals loaded from file
-            constants (dict): Dict of constants loaded from file
+            params (dict): Dict of params loaded from file
             database (dict): The database in the format dict(long: dict)
         """
 
         self.goal_list = goal_list
-        self.max_round = constants['run']['max_round_num']
+        self.max_round = params['run']['max_round_num']
         self.default_key = usersim_default_key
         # A list of REQUIRED to be in the first action inform keys
         self.init_informs = usersim_required_init_inform_keys
@@ -41,26 +40,26 @@ class RuleBasedUserSimulator:
         # Sample a random goal
         self.goal = self._sample_goal()
         # Add default slot to requests of goal
-        self.goal['request_slots'][self.default_key] = 'UNK'
+        self.goal[const.REQUEST_SLOTS][self.default_key] = const.UNKNOWN
 
         # Reset the user state
         self.state = {}
         # Add all inform slots informed by agent or user sim to this dict
-        self.state['history_slots'] = {}
+        self.state[const.HISTORY_SLOTS] = {}
         # Any inform slots for the current user sim action, empty at start of turn
-        self.state['inform_slots'] = {}
+        self.state[const.INFORM_SLOTS] = {}
         # Current request slots the user sim wants to request
-        self.state['request_slots'] = {}
+        self.state[const.REQUEST_SLOTS] = {}
         # Init. all informs and requests in user goal, remove slots as informs made by user or agent
-        self.state['rest_slots'] = {}
-        self.state['rest_slots'].update(self.goal['inform_slots'])
-        self.state['rest_slots'].update(self.goal['request_slots'])
-        self.state['intent'] = ''
+        self.state[const.REST_SLOTS] = {}
+        self.state[const.REST_SLOTS].update(self.goal[const.INFORM_SLOTS])
+        self.state[const.REST_SLOTS].update(self.goal[const.REQUEST_SLOTS])
+        self.state[const.INTENT] = ''
 
         # False for failure, true for success, init. to failure
-        self.constraint_check = FAIL
+        self.constraint_check = const.FAILED_DIALOG
         self.episode_over = False
-        self.dialogue_status = NO_OUTCOME
+        self.dialogue_status = const.NO_OUTCOME_YET
 
         return self._return_init_action()
 
@@ -79,35 +78,35 @@ class RuleBasedUserSimulator:
         """
 
         # The first dialogue intent (action) is always a request
-        self.state['intent'] = 'request'
+        self.state[const.INTENT] = const.REQUEST
 
-        if self.goal['inform_slots']:
+        if self.goal[const.INFORM_SLOTS]:
             # Pick all the required init. informs, and add if they exist in goal inform slots
             for inform_key in self.init_informs:
-                if inform_key in self.goal['inform_slots']:
-                    self.state['inform_slots'][inform_key] = self.goal['inform_slots'][inform_key]
-                    self.state['rest_slots'].pop(inform_key)
-                    self.state['history_slots'][inform_key] = self.goal['inform_slots'][inform_key]
+                if inform_key in self.goal[const.INFORM_SLOTS]:
+                    self.state[const.INFORM_SLOTS][inform_key] = self.goal[const.INFORM_SLOTS][inform_key]
+                    self.state[const.REST_SLOTS].pop(inform_key)
+                    self.state[const.HISTORY_SLOTS][inform_key] = self.goal[const.INFORM_SLOTS][inform_key]
             # If nothing was added then pick a random one to add
-            if not self.state['inform_slots']:
-                key, value = random.choice(list(self.goal['inform_slots'].items()))
-                self.state['inform_slots'][key] = value
-                self.state['rest_slots'].pop(key)
-                self.state['history_slots'][key] = value
+            if not self.state[const.INFORM_SLOTS]:
+                key, value = random.choice(list(self.goal[const.INFORM_SLOTS].items()))
+                self.state[const.INFORM_SLOTS][key] = value
+                self.state[const.REST_SLOTS].pop(key)
+                self.state[const.HISTORY_SLOTS][key] = value
 
         # Now add a request, do a random one if something other than def. available
-        self.goal['request_slots'].pop(self.default_key)
-        if self.goal['request_slots']:
-            req_key = random.choice(list(self.goal['request_slots'].keys()))
+        self.goal[const.REQUEST_SLOTS].pop(self.default_key)
+        if self.goal[const.REQUEST_SLOTS]:
+            req_key = random.choice(list(self.goal[const.REQUEST_SLOTS].keys()))
         else:
             req_key = self.default_key
-        self.goal['request_slots'][self.default_key] = 'UNK'
-        self.state['request_slots'][req_key] = 'UNK'
+        self.goal[const.REQUEST_SLOTS][self.default_key] = const.UNKNOWN
+        self.state[const.REQUEST_SLOTS][req_key] = const.UNKNOWN
 
         user_response = {}
-        user_response['intent'] = self.state['intent']
-        user_response['request_slots'] = copy.deepcopy(self.state['request_slots'])
-        user_response['inform_slots'] = copy.deepcopy(self.state['inform_slots'])
+        user_response[const.INTENT] = self.state[const.INTENT]
+        user_response[const.REQUEST_SLOTS] = copy.deepcopy(self.state[const.REQUEST_SLOTS])
+        user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
         return user_response
 
@@ -130,70 +129,71 @@ class RuleBasedUserSimulator:
 
         # Assertions -----
         # No UNK in agent action informs
-        for value in agent_action['inform_slots'].values():
-            assert value != 'UNK'
-            assert value != 'PLACEHOLDER'
+        for value in agent_action[const.INFORM_SLOTS].values():
+            assert value != const.UNKNOWN
+            assert value != const.PLACEHOLDER
         # No PLACEHOLDER in agent at all
-        for value in agent_action['request_slots'].values():
-            assert value != 'PLACEHOLDER'
+        for value in agent_action[const.REQUEST_SLOTS].values():
+            assert value != const.PLACEHOLDER
         # ----------------
 
-        self.state['inform_slots'].clear()
-        self.state['intent'] = ''
+        self.state[const.INFORM_SLOTS].clear()
+        self.state[const.INTENT] = ''
 
         done = False
-        success = NO_OUTCOME
+        success = const.NO_OUTCOME_YET
         # First check round num, if equal to max then fail
         if self.max_round > 0 and agent_action['round'] >= self.max_round:
             done = True
-            success = FAIL
-            self.state['intent'] = 'done'
-            self.state['request_slots'].clear()
+            success = const.FAILED_DIALOG
+            self.state[const.INTENT] = const.DONE
+            self.state[const.REQUEST_SLOTS].clear()
         else:
-            agent_intent = agent_action['intent']
-            if agent_intent == 'request':
+            agent_intent = agent_action[const.INTENT]
+            if agent_intent == const.REQUEST:
                 self._response_to_request(agent_action)
-            elif agent_intent == 'inform':
+            elif agent_intent == const.INFORM:
                 self._response_to_inform(agent_action)
-            elif agent_intent == 'match_found':
+            elif agent_intent == const.MATCH_FOUND:
                 self._response_to_match_found(agent_action)
-            elif agent_intent == 'done':
+            elif agent_intent == const.DONE:
                 success = self._response_to_done()
-                self.state['intent'] = 'done'
-                self.state['request_slots'].clear()
+                self.state[const.INTENT] = const.DONE
+                self.state[const.REQUEST_SLOTS].clear()
                 done = True
 
         # Assumptions -------
         # If request intent, then make sure request slots
-        if self.state['intent'] == 'request':
-            assert self.state['request_slots']
+        if self.state[const.INTENT] == const.REQUEST:
+            assert self.state[const.REQUEST_SLOTS]
         # If inform intent, then make sure inform slots and NO request slots
-        if self.state['intent'] == 'inform':
-            assert self.state['inform_slots']
-            assert not self.state['request_slots']
-        assert 'UNK' not in self.state['inform_slots'].values()
-        assert 'PLACEHOLDER' not in self.state['request_slots'].values()
+        if self.state[const.INTENT] == const.INFORM:
+            assert self.state[const.INFORM_SLOTS]
+            assert not self.state[const.REQUEST_SLOTS]
+        assert const.UNKNOWN not in self.state[const.INFORM_SLOTS].values()
+        assert const.PLACEHOLDER not in self.state[const.REQUEST_SLOTS].values()
         # No overlap between rest and hist
-        for key in self.state['rest_slots']:
-            assert key not in self.state['history_slots']
-        for key in self.state['history_slots']:
-            assert key not in self.state['rest_slots']
+        for key in self.state[const.REST_SLOTS]:
+            assert key not in self.state[const.HISTORY_SLOTS]
+        for key in self.state[const.HISTORY_SLOTS]:
+            assert key not in self.state[const.REST_SLOTS]
         # All slots in both rest and hist should contain the slots for goal
-        for inf_key in self.goal['inform_slots']:
-            assert self.state['history_slots'].get(inf_key, False) or self.state['rest_slots'].get(inf_key, False)
-        for req_key in self.goal['request_slots']:
-            assert self.state['history_slots'].get(req_key, False) or self.state['rest_slots'].get(req_key,
-                                                                                                   False), req_key
+        for inf_key in self.goal[const.INFORM_SLOTS]:
+            assert self.state[const.HISTORY_SLOTS].get(inf_key, False) \
+                or self.state[const.REST_SLOTS].get(inf_key, False)
+        for req_key in self.goal[const.REQUEST_SLOTS]:
+            assert self.state[const.HISTORY_SLOTS].get(req_key, False) \
+                or self.state[const.REST_SLOTS].get(req_key, False), req_key
         # Anything in the rest should be in the goal
-        for key in self.state['rest_slots']:
-            assert self.goal['inform_slots'].get(key, False) or self.goal['request_slots'].get(key, False)
-        assert self.state['intent'] != ''
+        for key in self.state[const.REST_SLOTS]:
+            assert self.goal[const.INFORM_SLOTS].get(key, False) or self.goal[const.REQUEST_SLOTS].get(key, False)
+        assert self.state[const.INTENT] != ''
         # -----------------------
 
         user_response = {}
-        user_response['intent'] = self.state['intent']
-        user_response['request_slots'] = copy.deepcopy(self.state['request_slots'])
-        user_response['inform_slots'] = copy.deepcopy(self.state['inform_slots'])
+        user_response[const.INTENT] = self.state[const.INTENT]
+        user_response[const.REQUEST_SLOTS] = copy.deepcopy(self.state[const.REQUEST_SLOTS])
+        user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
         reward = reward_function(success, self.max_round)
 
@@ -211,72 +211,74 @@ class RuleBasedUserSimulator:
         """
 
         # if the agent action cointains request slots
-        if len(agent_action['request_slots'].keys()) > 0:
+        if len(agent_action[const.REQUEST_SLOTS].keys()) > 0:
 
             # take the first request slot
-            agent_request_key = list(agent_action['request_slots'].keys())[0]
+            agent_request_key = list(agent_action[const.REQUEST_SLOTS].keys())[0]
 
             # First Case: if agent requests for something that is in the user sims goal inform slots, then inform it
-            if agent_request_key in self.goal['inform_slots']:
-                self.state['intent'] = 'inform'
-                self.state['inform_slots'][agent_request_key] = self.goal['inform_slots'][agent_request_key]
+            if agent_request_key in self.goal[const.INFORM_SLOTS]:
+                self.state[const.INTENT] = const.INFORM
+                self.state[const.INFORM_SLOTS][agent_request_key] = self.goal[const.INFORM_SLOTS][agent_request_key]
 
                 # remove the inform slot from the rest slots
-                self.state['rest_slots'].pop(agent_request_key, None)
+                self.state[const.REST_SLOTS].pop(agent_request_key, None)
 
                 # add the inform slot to the history slots
-                self.state['history_slots'][agent_request_key] = self.goal['inform_slots'][agent_request_key]
+                self.state[const.HISTORY_SLOTS][agent_request_key] = self.goal[const.INFORM_SLOTS][agent_request_key]
 
-                self.state['request_slots'].clear()
+                self.state[const.REQUEST_SLOTS].clear()
             # Second Case: if the agent requests for something in user sims goal request slots and it has already been
             # informed, then inform it
-            elif agent_request_key in self.goal['request_slots'] and agent_request_key in self.state['history_slots'] \
-                    and agent_request_key not in self.state['rest_slots']:
+            elif agent_request_key in self.goal[const.REQUEST_SLOTS] \
+                    and agent_request_key in self.state[const.HISTORY_SLOTS] \
+                    and agent_request_key not in self.state[const.REST_SLOTS]:
 
-                self.state['intent'] = 'inform'
-                self.state['inform_slots'][agent_request_key] = self.state['history_slots'][agent_request_key]
-                self.state['request_slots'].clear()
+                self.state[const.INTENT] = const.INFORM
+                self.state[const.INFORM_SLOTS][agent_request_key] = self.state[const.HISTORY_SLOTS][agent_request_key]
+                self.state[const.REQUEST_SLOTS].clear()
             # Third Case: if the agent requests for something in the user sims goal request slots and it HASN'T been
             # informed, then request it with a random inform
-            elif agent_request_key in self.goal['request_slots'] and agent_request_key in self.state['rest_slots']:
-                self.state['request_slots'].clear()
-                self.state['intent'] = 'request'
-                self.state['request_slots'][agent_request_key] = 'UNK'
+            elif agent_request_key in self.goal[const.REQUEST_SLOTS] \
+                    and agent_request_key in self.state[const.REST_SLOTS]:
+                self.state[const.REQUEST_SLOTS].clear()
+                self.state[const.INTENT] = const.REQUEST
+                self.state[const.REQUEST_SLOTS][agent_request_key] = const.UNKNOWN
 
                 rest_informs = {}
-                for key, value in list(self.state['rest_slots'].items()):
-                    if key in self.goal['inform_slots']:
+                for key, value in list(self.state[const.REST_SLOTS].items()):
+                    if key in self.goal[const.INFORM_SLOTS]:
                         rest_informs[key] = value
 
                 if rest_informs:
                     key_choice, value_choice = random.choice(list(rest_informs.items()))
-                    self.state['inform_slots'][key_choice] = value_choice
-                    self.state['rest_slots'].pop(key_choice)
-                    self.state['history_slots'][key_choice] = value_choice
+                    self.state[const.INFORM_SLOTS][key_choice] = value_choice
+                    self.state[const.REST_SLOTS].pop(key_choice)
+                    self.state[const.HISTORY_SLOTS][key_choice] = value_choice
             # Fourth and Final Case: otherwise the user sim does not care about the slot being requested, then inform
             # 'anything' as the value of the requested slot
             else:
-                assert agent_request_key not in self.state['rest_slots']
-                self.state['intent'] = 'inform'
-                self.state['inform_slots'][agent_request_key] = 'anything'
-                self.state['request_slots'].clear()
-                self.state['history_slots'][agent_request_key] = 'anything'
+                assert agent_request_key not in self.state[const.REST_SLOTS]
+                self.state[const.INTENT] = const.INFORM
+                self.state[const.INFORM_SLOTS][agent_request_key] = const.ANYTHING
+                self.state[const.REQUEST_SLOTS].clear()
+                self.state[const.HISTORY_SLOTS][agent_request_key] = const.ANYTHING
         # if there are no request slot in the agent action (problably we should not be here), inform a random slot
         else:
-            if len(self.state['rest_slots']) > 0:
-                random_slot = random.choice(self.state['rest_slots'])
+            if len(self.state[const.REST_SLOTS]) > 0:
+                random_slot = random.choice(self.state[const.REST_SLOTS])
 
                 # if the random slot is in inform slots
-                if random_slot in self.goal['inform_slots']:
-                    self.state['inform_slots'][random_slot] = self.goal['inform_slots'][random_slot]
+                if random_slot in self.goal[const.INFORM_SLOTS]:
+                    self.state[const.INFORM_SLOTS][random_slot] = self.goal[const.INFORM_SLOTS][random_slot]
 
-                    self.state['rest_slots'].pop(random_slot)
-                    self.state['intent'] = 'inform'
+                    self.state[const.REST_SLOTS].pop(random_slot)
+                    self.state[const.INTENT] = const.INFORM
                 # if the random slot is in the request slots
-                elif random_slot in self.goal['request_slots']:
-                    self.state['request_slots'][random_slot] = self.goal['request_slots'][random_slot]
+                elif random_slot in self.goal[const.REQUEST_SLOTS]:
+                    self.state[const.REQUEST_SLOTS][random_slot] = self.goal[const.REQUEST_SLOTS][random_slot]
 
-                    self.state['intent'] = 'request'
+                    self.state[const.INTENT] = const.REQUEST
 
     def _response_to_inform(self, agent_action):
         """
@@ -290,51 +292,51 @@ class RuleBasedUserSimulator:
                                  'round_num': int)
         """
 
-        agent_inform_key = list(agent_action['inform_slots'].keys())[0]
-        agent_inform_value = agent_action['inform_slots'][agent_inform_key]
+        agent_inform_key = list(agent_action[const.INFORM_SLOTS].keys())[0]
+        agent_inform_value = agent_action[const.INFORM_SLOTS][agent_inform_key]
 
         assert agent_inform_key != self.default_key
 
         # Add all informs (by agent too) to hist slots
-        self.state['history_slots'][agent_inform_key] = agent_inform_value
+        self.state[const.HISTORY_SLOTS][agent_inform_key] = agent_inform_value
         # Remove from rest slots if in it
-        self.state['rest_slots'].pop(agent_inform_key, None)
+        self.state[const.REST_SLOTS].pop(agent_inform_key, None)
         # Remove from request slots if in it
-        self.state['request_slots'].pop(agent_inform_key, None)
+        self.state[const.REQUEST_SLOTS].pop(agent_inform_key, None)
 
         # First Case: If agent informs something that is in goal informs and the value it informed doesnt match,
         # then inform the correct value
-        if agent_inform_value != self.goal['inform_slots'].get(agent_inform_key, agent_inform_value):
-            self.state['intent'] = 'inform'
-            self.state['inform_slots'][agent_inform_key] = self.goal['inform_slots'][agent_inform_key]
-            self.state['request_slots'].clear()
-            self.state['history_slots'][agent_inform_key] = self.goal['inform_slots'][agent_inform_key]
+        if agent_inform_value != self.goal[const.INFORM_SLOTS].get(agent_inform_key, agent_inform_value):
+            self.state[const.INTENT] = const.INFORM
+            self.state[const.INFORM_SLOTS][agent_inform_key] = self.goal[const.INFORM_SLOTS][agent_inform_key]
+            self.state[const.REQUEST_SLOTS].clear()
+            self.state[const.HISTORY_SLOTS][agent_inform_key] = self.goal[const.INFORM_SLOTS][agent_inform_key]
         # Second Case: Otherwise pick a random action to take
         else:
             # - If anything in state requests then request it
-            if self.state['request_slots']:
-                self.state['intent'] = 'request'
+            if self.state[const.REQUEST_SLOTS]:
+                self.state[const.INTENT] = const.REQUEST
             # - Else if something to say in rest slots, pick something
-            elif self.state['rest_slots']:
-                def_in = self.state['rest_slots'].pop(self.default_key, False)
-                if self.state['rest_slots']:
-                    key, value = random.choice(list(self.state['rest_slots'].items()))
-                    if value != 'UNK':
-                        self.state['intent'] = 'inform'
-                        self.state['inform_slots'][key] = value
-                        self.state['rest_slots'].pop(key)
-                        self.state['history_slots'][key] = value
+            elif self.state[const.REST_SLOTS]:
+                def_in = self.state[const.REST_SLOTS].pop(self.default_key, False)
+                if self.state[const.REST_SLOTS]:
+                    key, value = random.choice(list(self.state[const.REST_SLOTS].items()))
+                    if value != const.UNKNOWN:
+                        self.state[const.INTENT] = const.INFORM
+                        self.state[const.INFORM_SLOTS][key] = value
+                        self.state[const.REST_SLOTS].pop(key)
+                        self.state[const.HISTORY_SLOTS][key] = value
                     else:
-                        self.state['intent'] = 'request'
-                        self.state['request_slots'][key] = 'UNK'
+                        self.state[const.INTENT] = const.REQUEST
+                        self.state[const.REQUEST_SLOTS][key] = const.UNKNOWN
                 else:
-                    self.state['intent'] = 'request'
-                    self.state['request_slots'][self.default_key] = 'UNK'
-                if def_in == 'UNK':
-                    self.state['rest_slots'][self.default_key] = 'UNK'
+                    self.state[const.INTENT] = const.REQUEST
+                    self.state[const.REQUEST_SLOTS][self.default_key] = const.UNKNOWN
+                if def_in == const.UNKNOWN:
+                    self.state[const.REST_SLOTS][self.default_key] = const.UNKNOWN
             # - Otherwise respond with 'nothing to say' intent
             else:
-                self.state['intent'] = 'thanks'
+                self.state[const.INTENT] = const.THANKS
 
     def _response_to_match_found(self, agent_action):
         """
@@ -347,33 +349,33 @@ class RuleBasedUserSimulator:
                                  'round_num': int)
         """
 
-        agent_informs = agent_action['inform_slots']
+        agent_informs = agent_action[const.INFORM_SLOTS]
 
-        self.state['intent'] = 'thanks'
-        self.constraint_check = SUCCESS
+        self.state[const.INTENT] = const.THANKS
+        self.constraint_check = const.SUCCESS_DIALOG
 
         assert self.default_key in agent_informs
-        self.state['rest_slots'].pop(self.default_key, None)
-        self.state['history_slots'][self.default_key] = str(agent_informs[self.default_key])
-        self.state['request_slots'].pop(self.default_key, None)
+        self.state[const.REST_SLOTS].pop(self.default_key, None)
+        self.state[const.HISTORY_SLOTS][self.default_key] = str(agent_informs[self.default_key])
+        self.state[const.REQUEST_SLOTS].pop(self.default_key, None)
 
-        if agent_informs[self.default_key] == 'no match available':
-            self.constraint_check = FAIL
+        if agent_informs[self.default_key] == const.NO_MATCH:
+            self.constraint_check = const.FAILED_DIALOG
 
         # Check to see if all goal informs are in the agent informs, and that the values match
-        for key, value in self.goal['inform_slots'].items():
+        for key, value in self.goal[const.INFORM_SLOTS].items():
             assert value is not None
             # For items that cannot be in the queries don't check to see if they are in the agent informs here
             if key in self.no_query:
                 continue
             # Will return true if key not in agent informs OR if value does not match value of agent informs[key]
             if value != agent_informs.get(key, None):
-                self.constraint_check = FAIL
+                self.constraint_check = const.FAILED_DIALOG
                 break
 
-        if self.constraint_check == FAIL:
-            self.state['intent'] = 'reject'
-            self.state['request_slots'].clear()
+        if self.constraint_check == const.FAILED_DIALOG:
+            self.state[const.INTENT] = const.REJECT
+            self.state[const.REQUEST_SLOTS].clear()
 
     def _response_to_done(self):
         """
@@ -386,20 +388,20 @@ class RuleBasedUserSimulator:
             int: Success: -1, 0 or 1 for loss, neither win nor loss, win
         """
 
-        if self.constraint_check == FAIL:
-            return FAIL
+        if self.constraint_check == const.FAILED_DIALOG:
+            return const.FAILED_DIALOG
 
-        if not self.state['rest_slots']:
-            assert not self.state['request_slots']
-        if self.state['rest_slots']:
-            return FAIL
+        if not self.state[const.REST_SLOTS]:
+            assert not self.state[const.REQUEST_SLOTS]
+        if self.state[const.REST_SLOTS]:
+            return const.FAILED_DIALOG
 
         # TEMP: ----
-        assert self.state['history_slots'][self.default_key] != 'no match available'
+        assert self.state[const.HISTORY_SLOTS][self.default_key] != const.NO_MATCH
 
-        match = copy.deepcopy(self.database[int(self.state['history_slots'][self.default_key])])
+        match = copy.deepcopy(self.database[int(self.state[const.HISTORY_SLOTS][self.default_key])])
 
-        for key, value in self.goal['inform_slots'].items():
+        for key, value in self.goal[const.INFORM_SLOTS].items():
             assert value is not None
             if key in self.no_query:
                 continue
@@ -408,4 +410,4 @@ class RuleBasedUserSimulator:
                 break
         # ----------
 
-        return SUCCESS
+        return const.SUCCESS_DIALOG

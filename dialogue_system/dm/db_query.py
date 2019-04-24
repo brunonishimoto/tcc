@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dialogue_config import no_query_keys, usersim_default_key
 import copy
+import constants as const
 
 
 class DBQuery:
@@ -15,12 +16,11 @@ class DBQuery:
         """
 
         self.database = database
-        # {frozenset: {string: int}} A dict of dicts
-        self.cached_db_slot = defaultdict(dict)
-        # {frozenset: {'#': {'slot': 'value'}}} A dict of dicts of dicts, a dict of DB sub-dicts
-        self.cached_db = defaultdict(dict)
         self.no_query = no_query_keys
         self.match_key = usersim_default_key
+
+        self.cached_db_slot = defaultdict(dict)
+        self.cached_db = defaultdict(dict)
 
     def fill_inform_slot(self, inform_slot_to_fill, current_inform_slots):
         """
@@ -56,7 +56,7 @@ class DBQuery:
             # Get key with max value (ie slot value with highest count of available results)
             filled_inform[key] = max(values_dict, key=values_dict.get)
         else:
-            filled_inform[key] = 'no match available'
+            filled_inform[key] = const.NO_MATCH
 
         return filled_inform
 
@@ -97,13 +97,14 @@ class DBQuery:
             dict: The available items in the database
         """
 
-        # Filter non-queryable items and keys with the value 'anything' since those are inconsequential to the constraints
-        new_constraints = {k: v for k, v in constraints.items() if k not in self.no_query and v is not 'anything'}
+        # Filter non-queryable items and keys with the value 'anything' since those are
+        # inconsequential to the constraints
+        new_constraints = {k: v for k, v in constraints.items() if k not in self.no_query and v is not const.ANYTHING}
 
         inform_items = frozenset(new_constraints.items())
         cache_return = self.cached_db[inform_items]
 
-        if cache_return == None:
+        if cache_return is None:
             # If it is none then no matches fit with the constraints so return an empty dict
             return {}
         # if it isnt empty then return what it is
@@ -158,7 +159,7 @@ class DBQuery:
         # If it made it down here then a new query was made and it must add it to cached_db_slot and return it
         # Init all key values with 0
         db_results = {key: 0 for key in current_informs.keys()}
-        db_results['matching_all_constraints'] = 0
+        db_results[const.KB_MATCHING_ALL_CONSTRAINTS] = 0
 
         for id in self.database.keys():
             all_slots_match = True
@@ -167,7 +168,7 @@ class DBQuery:
                 if CI_key in self.no_query:
                     continue
                 # If anything all_slots_match stays true AND the specific key slot gets a +1
-                if CI_value == 'anything':
+                if CI_value == const.ANYTHING:
                     db_results[CI_key] += 1
                     continue
                 if CI_key in self.database[id].keys():
@@ -177,7 +178,8 @@ class DBQuery:
                         all_slots_match = False
                 else:
                     all_slots_match = False
-            if all_slots_match: db_results['matching_all_constraints'] += 1
+            if all_slots_match:
+                db_results[const.KB_MATCHING_ALL_CONSTRAINTS] += 1
 
         # update cache (set the empty dict)
         self.cached_db_slot[inform_items].update(db_results)
