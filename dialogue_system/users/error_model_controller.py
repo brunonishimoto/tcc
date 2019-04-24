@@ -70,7 +70,8 @@ class ErrorModelController:
 
     def _slot_noise(self, key, informs_dict):
         """
-        Replaces current slot given a key in the informs dict with a new slot and selects a random value for this new slot.
+        Replaces current slot given a key in the informs dict with a new slot and selects a random value for
+        this new slot.
 
         Parameters:
             key (string)
