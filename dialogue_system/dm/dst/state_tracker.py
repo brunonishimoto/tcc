@@ -1,6 +1,6 @@
 from dialogue_system.dm.db_query import DBQuery
 from dialogue_system.utils.util import convert_list_to_dict
-from dialogue_system.dialogue_config import all_intents, all_slots, usersim_default_key
+import dialogue_system.dialogue_config as config
 import dialogue_system.constants as const
 import numpy as np
 import copy
@@ -23,11 +23,11 @@ class StateTracker:
         """
 
         self.db_helper = DBQuery(database)
-        self.match_key = usersim_default_key
-        self.intents_dict = convert_list_to_dict(all_intents)
-        self.num_intents = len(all_intents)
-        self.slots_dict = convert_list_to_dict(all_slots)
-        self.num_slots = len(all_slots)
+        self.match_key = config.usersim_default_key
+        self.intents_dict = convert_list_to_dict(config.all_intents)
+        self.num_intents = len(config.all_intents)
+        self.slots_dict = convert_list_to_dict(config.all_slots)
+        self.num_slots = len(config.all_slots)
         self.max_round_num = params['run']['max_round_num']
         self.none_state = np.zeros(self.get_state_size())
         self.reset()

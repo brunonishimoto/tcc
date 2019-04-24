@@ -1,5 +1,4 @@
-from dialogue_system.dialogue_config import usersim_intents, all_slots
-from dialogue_system.utils.util import reward_function
+import dialogue_system.dialogue_config as config
 import dialogue_system.constants as const
 
 
@@ -45,7 +44,7 @@ class RealUser():
             chunks = input_string.split('/')
 
             intent_correct = True
-            if chunks[0] not in usersim_intents:
+            if chunks[0] not in config.usersim_intents:
                 intent_correct = False
             response[const.INTENT] = chunks[0]
 
@@ -54,7 +53,7 @@ class RealUser():
                 informs_items_list = chunks[1].split(', ')
                 for inf in informs_items_list:
                     inf = inf.split(': ')
-                    if inf[0] not in all_slots:
+                    if inf[0] not in config.all_slots:
                         informs_correct = False
                         break
                     response[const.INFORM_SLOTS][inf[0]] = inf[1]
@@ -63,7 +62,7 @@ class RealUser():
             if len(chunks[2]) > 0:
                 requests_key_list = chunks[2].split(', ')
                 for req in requests_key_list:
-                    if req not in all_slots:
+                    if req not in config.all_slots:
                         requests_correct = False
                         break
                     response[const.REQUEST_SLOTS][req] = const.UNKNOWN
@@ -129,6 +128,26 @@ class RealUser():
         assert const.UNKNOWN not in user_response[const.INFORM_SLOTS].values()
         assert const.PLACEHOLDER not in user_response[const.REQUEST_SLOTS].values()
 
-        reward = reward_function(success, self.max_round)
+        reward = self._reward_function(success)
 
         return user_response, reward, done, True if success is 1 else False
+
+    def _reward_function(self, success):
+        """
+        Return the reward given the success.
+
+        Return -1 + -max_round if success is FAIL, -1 + 2 * max_round if success is SUCCESS and -1 otherwise.
+
+        Parameters:
+            success (int)
+
+        Returns:
+            int: Reward
+        """
+
+        reward = -1
+        if success == const.FAILED_DIALOG:
+            reward += - self.max_round
+        elif success == const.SUCCESS_DIALOG:
+            reward += 2 * self.max_round
+        return reward

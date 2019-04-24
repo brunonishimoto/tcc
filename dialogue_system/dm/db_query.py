@@ -1,7 +1,7 @@
-from collections import defaultdict
-from dialogue_system.dialogue_config import no_query_keys, usersim_default_key
-import copy
+import dialogue_system.dialogue_config as config
 import dialogue_system.constants as const
+from collections import defaultdict
+import copy
 
 
 class DBQuery:
@@ -16,8 +16,8 @@ class DBQuery:
         """
 
         self.database = database
-        self.no_query = no_query_keys
-        self.match_key = usersim_default_key
+        self.no_query = config.no_query_keys
+        self.match_key = config.usersim_default_key
 
         self.cached_db_slot = defaultdict(dict)
         self.cached_db = defaultdict(dict)

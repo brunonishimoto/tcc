@@ -1,6 +1,6 @@
-import random
-from dialogue_system.dialogue_config import usersim_intents
+import dialogue_system.dialogue_config as config
 import dialogue_system.constants as const
+import random
 
 
 class ErrorModelController:
@@ -22,7 +22,7 @@ class ErrorModelController:
         self.slot_error_prob = params['emc']['slot_error_prob']
         self.slot_error_mode = params['emc']['slot_error_mode']  # [0, 3]
         self.intent_error_prob = params['emc']['intent_error_prob']
-        self.intents = usersim_intents
+        self.intents = config.usersim_intents
 
     def infuse_error(self, frame):
         """

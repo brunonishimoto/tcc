@@ -2,10 +2,10 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 import dialogue_system.constants as const
+import dialogue_system.dialogue_config as config
 import random
 import copy
 import numpy as np
-from dialogue_system.dialogue_config import rule_requests, agent_actions
 import re
 
 
@@ -46,10 +46,10 @@ class DQNAgent:
             raise ValueError('Max memory size must be at least as great as batch size!')
 
         self.state_size = state_size
-        self.possible_actions = agent_actions
+        self.possible_actions = config.agent_actions
         self.num_actions = len(self.possible_actions)
 
-        self.rule_request_set = rule_requests
+        self.rule_request_set = config.rule_requests
 
         self.beh_model = self._build_model()
         self.tar_model = self._build_model()

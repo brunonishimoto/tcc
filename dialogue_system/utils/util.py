@@ -1,5 +1,3 @@
-from dialogue_system.dialogue_config import FAIL, SUCCESS
-
 
 def convert_list_to_dict(lst):
     """
@@ -30,24 +28,3 @@ def remove_empty_slots(dic):
         for key in list(dic[id].keys()):
             if dic[id][key] == '':
                 dic[id].pop(key)
-
-
-def reward_function(success, max_round):
-    """
-    Return the reward given the success.
-
-    Return -1 + -max_round if success is FAIL, -1 + 2 * max_round if success is SUCCESS and -1 otherwise.
-
-    Parameters:
-        success (int)
-
-    Returns:
-        int: Reward
-    """
-
-    reward = -1
-    if success == FAIL:
-        reward += -max_round
-    elif success == SUCCESS:
-        reward += 2 * max_round
-    return reward

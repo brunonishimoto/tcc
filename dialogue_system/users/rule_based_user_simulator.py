@@ -1,5 +1,4 @@
-from dialogue_system.dialogue_config import usersim_default_key, usersim_required_init_inform_keys, no_query_keys
-from dialogue_system.utils.util import reward_function
+import dialogue_system.dialogue_config as config
 import dialogue_system.constants as const
 import random
 import copy
@@ -20,10 +19,10 @@ class RuleBasedUserSimulator:
 
         self.goal_list = goal_list
         self.max_round = params['run']['max_round_num']
-        self.default_key = usersim_default_key
+        self.default_key = config.usersim_default_key
         # A list of REQUIRED to be in the first action inform keys
-        self.init_informs = usersim_required_init_inform_keys
-        self.no_query = no_query_keys
+        self.init_informs = config.usersim_required_init_inform_keys
+        self.no_query = config.no_query_keys
 
         # TEMP ----
         self.database = database
@@ -195,7 +194,7 @@ class RuleBasedUserSimulator:
         user_response[const.REQUEST_SLOTS] = copy.deepcopy(self.state[const.REQUEST_SLOTS])
         user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
-        reward = reward_function(success, self.max_round)
+        reward = self._reward_function(success)
 
         return user_response, reward, done, True if success is 1 else False
 
@@ -411,3 +410,23 @@ class RuleBasedUserSimulator:
         # ----------
 
         return const.SUCCESS_DIALOG
+
+    def _reward_function(self, success):
+        """
+        Return the reward given the success.
+
+        Return -1 + -max_round if success is FAIL, -1 + 2 * max_round if success is SUCCESS and -1 otherwise.
+
+        Parameters:
+            success (int)
+
+        Returns:
+            int: Reward
+        """
+
+        reward = -1
+        if success == const.FAILED_DIALOG:
+            reward += -self.max_round
+        elif success == const.SUCCESS_DIALOG:
+            reward += 2 * self.max_round
+        return reward
