@@ -49,6 +49,22 @@ class DialogueSystem:
         self.state_tracker = StateTracker(self.database, params)
         self.dqn_agent = DQNAgent(self.state_tracker.get_state_size(), params)
 
+        # The metrics to store
+        self.performance_path = params['agent']['performance_path']
+        self.performance_metrics = {}
+        self.performance_metrics['success_rate'] = {}
+        self.performance_metrics['avg_round'] = {}
+        self.performance_metrics['avg_reward'] = {}
+
+    def save_performance_records(self, records):
+        """Save performance numbers."""
+        try:
+            json.dump(records, open(self.performance_path, "w"), indent=2)
+            print(f'saved model in {self.performance_path}')
+        except Exception as e:
+            print(f'Error: Writing model fails: {self.performance_path}')
+            print(e)
+
     def run_round(self, state, warmup=False, train=True):
         # 1) Agent takes action given state tracker's representation of dialogue (state)
         agent_action_index, agent_action = self.dqn_agent.get_action(state, use_rule=warmup)
@@ -124,21 +140,30 @@ class DialogueSystem:
         episode = 0
         period_reward_total = 0
         period_success_total = 0
+        period_round_total = 0
         success_rate_best = 0.0
         while episode < self.num_ep_run:
             self.episode_reset()
             episode += 1
             done = False
             state = self.state_tracker.get_state()
+            rounds = 0
             while not done:
                 next_state, reward, done, success = self.run_round(state)
                 period_reward_total += reward
                 state = next_state
+                rounds += 1
 
             period_success_total += success
+            period_round_total += rounds
 
             # Train
             if episode % self.train_freq == 0:
+                # evaluate metrics
+                self.performance_metrics['success_rate'][episode] = period_success_total / self.train_freq
+                self.performance_metrics['avg_reward'][episode] = period_reward_total / self.train_freq
+                self.performance_metrics['avg_round'][episode] = period_round_total / self.train_freq
+
                 # Check success rate
                 success_rate = period_success_total / self.train_freq
                 avg_reward = period_reward_total / self.train_freq
@@ -152,11 +177,13 @@ class DialogueSystem:
                     self.dqn_agent.save_weights()
                 period_success_total = 0
                 period_reward_total = 0
+                period_round_total = 0
                 # Copy
                 self.dqn_agent.copy()
                 # Train
                 self.dqn_agent.train()
         print('...Training Ended')
+        self.save_performance_records(self.performance_metrics)
 
     def train(self):
         self.warmup_run()
