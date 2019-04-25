@@ -54,6 +54,7 @@ class DialogueSystem:
         agent_action_index, agent_action = self.dqn_agent.get_action(state, use_rule=warmup)
         # 2) Update state tracker with the agent's action
         self.state_tracker.update_state_agent(agent_action)
+        # print(f'Agent Action: {agent_action}')
         # 3) User takes action given agent action
         user_action, reward, done, success = self.user.step(agent_action)
         if not done:
@@ -61,6 +62,7 @@ class DialogueSystem:
             self.emc.infuse_error(user_action)
         # 5) Update state tracker with user action
         self.state_tracker.update_state_user(user_action)
+        # print(f'User Action: {user_action}\n')
         # 6) Get next state and add experience
         next_state = self.state_tracker.get_state(done)
         if train or warmup:

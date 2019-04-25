@@ -30,8 +30,10 @@ agent_request_slots = ['moviename', 'theater', 'starttime', 'date', 'numberofpeo
 
 # Possible actions for agent
 agent_actions = [
+    # {'intent': 'greeting', 'inform_slots': {}, 'request_slots': {}},
     {'intent': 'done', 'inform_slots': {}, 'request_slots': {}},  # Triggers closing of conversation
-    {'intent': 'match_found', 'inform_slots': {}, 'request_slots': {}}
+    {'intent': 'match_found', 'inform_slots': {}, 'request_slots': {}},
+    # {'intent': 'thanks', 'inform_slots': {}, 'request_slots': {}},
 ]
 for slot in agent_inform_slots:
     # Must use intent match found to inform this, but still have to keep in agent inform slots
@@ -50,11 +52,6 @@ no_query_keys = ['numberofpeople', usersim_default_key]
 #######################################
 # Global config
 #######################################
-
-# These are used for both constraint check AND success check in usersim
-FAIL = -1
-NO_OUTCOME = 0
-SUCCESS = 1
 
 # All possible intents (for one-hot conversion in ST.get_state())
 all_intents = ['inform', 'request', 'done', 'match_found', 'thanks', 'reject']

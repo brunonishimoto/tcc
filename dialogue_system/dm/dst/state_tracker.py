@@ -1,4 +1,4 @@
-from dialogue_system.dm.db_query import DBQuery
+from dialogue_system.dm.dst.db_query import DBQuery
 from dialogue_system.utils.util import convert_list_to_dict
 import dialogue_system.dialogue_config as config
 import dialogue_system.constants as const
@@ -148,7 +148,6 @@ class StateTracker:
             agent_action (dict): The agent action of format dict('intent': string, 'inform_slots': dict,
                                  'request_slots': dict) and changed to dict('intent': '', 'inform_slots': {},
                                  'request_slots': {}, 'round': int, 'speaker': 'Agent')
-
         """
 
         if agent_action[const.INTENT] == const.INFORM:

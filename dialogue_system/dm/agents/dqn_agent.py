@@ -142,7 +142,7 @@ class DQNAgent:
         for (i, action) in enumerate(self.possible_actions):
             if response == action:
                 return i
-        raise ValueError('Response: {} not found in possible actions'.format(response))
+        raise ValueError(f'Response: {response} not found in possible actions')
 
     def _dqn_action(self, state):
         """

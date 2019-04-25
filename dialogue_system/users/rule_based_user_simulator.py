@@ -64,6 +64,7 @@ class RuleBasedUserSimulator:
 
     def _sample_goal(self):
         sample_goal = random.choice(self.goal_list)
+        # print(f'User Goal: {sample_goal}\n')
         return sample_goal
 
     def _return_init_action(self):
@@ -142,7 +143,7 @@ class RuleBasedUserSimulator:
         done = False
         success = const.NO_OUTCOME_YET
         # First check round num, if equal to max then fail
-        if self.max_round > 0 and agent_action['round'] >= self.max_round:
+        if self.max_round > 0 and agent_action[const.ROUND] >= self.max_round:
             done = True
             success = const.FAILED_DIALOG
             self.state[const.INTENT] = const.DONE
@@ -155,6 +156,11 @@ class RuleBasedUserSimulator:
                 self._response_to_inform(agent_action)
             elif agent_intent == const.MATCH_FOUND:
                 self._response_to_match_found(agent_action)
+            # elif agent_intent == const.CONFIRM_ANSWER:
+            #     self._response_to_confirm_answer(agent_action)
+            # elif agent_intent == const.THANKS:
+            #     success = self._response_to_thanks(agent_action)
+            #     done = True
             elif agent_intent == const.DONE:
                 success = self._response_to_done()
                 self.state[const.INTENT] = const.DONE
@@ -375,6 +381,61 @@ class RuleBasedUserSimulator:
         if self.constraint_check == const.FAILED_DIALOG:
             self.state[const.INTENT] = const.REJECT
             self.state[const.REQUEST_SLOTS].clear()
+            self.state[const.INFORM_SLOTS].clear()
+
+    # def _response_to_confirm_answer(self, agent_action):
+    #     if len(self.state[const.REST_SLOTS]) > 0:
+    #         slot = random.choice(self.state[const.REST_SLOTS])
+
+    #         if slot in self.goal[const.REQUEST_SLOTS]:
+    #             self.state[const.INTENT] = const.REQUEST
+    #             self.state[const.REQUEST_SLOTS][slot] = const.UNKNOWN
+    #         elif slot in self.goal[const.INFORM_SLOTS]:
+    #             self.state[const.INTENT] = const.INFORM
+    #             self.state[const.INFORM_SLOTS][slot] = self.goal[const.INFORM_SLOTS][slot]
+
+    #             if slot in self.state[const.REST_SLOTS]:
+    #                 self.state[const.REST_SLOTS].pop(slot)
+
+    #     else:
+    #         self.state[const.INTENT] = const.THANKS
+
+    # def _response_to_thanks(self, agent_action):
+    #     self.constraint_check = const.SUCCESS_DIALOG
+    #     self.state[const.INTENT] = const.THANKS
+
+    #     # remove the ultimate slot from the user request slots
+    #     request_slot_set = copy.deepcopy(self.state[const.REQUEST_SLOTS])
+    #     if self.default_key in request_slot_set:
+    #         request_slot_set.pop(self.default_key)
+
+    #     # remove the ultimate slot from the user rest slots
+    #     rest_slot_set = copy.deepcopy(self.state[const.REST_SLOTS])
+    #     if self.default_key in rest_slot_set:
+    #         rest_slot_set.pop(self.default_key)
+
+    #     # if the user had not answered
+    #     if len(request_slot_set) > 0 or len(rest_slot_set) > 0:
+    #         self.constraint_check = const.FAILED_DIALOG
+
+    #     # check the user history slots
+    #     for info_slot in self.state[const.HISTORY_SLOTS]:
+    #         if self.state[const.HISTORY_SLOTS][info_slot] == const.NO_MATCH:
+    #             self.constraint_check = const.FAILED_DIALOG
+
+    #         if info_slot in self.goal[const.INFORM_SLOTS]:
+    #             if self.state[const.HISTORY_SLOTS][info_slot] != \
+    #                     self.goal[const.INFORM_SLOTS][info_slot]:
+    #                 self.constraint_check = const.FAILED_DIALOG
+
+    #     if self.default_key in agent_action[const.INFORM_SLOTS]:
+    #         if agent_action[const.INFORM_SLOTS][self.default_key] == const.NO_MATCH:
+    #             self.constraint_check = const.FAILED_DIALOG
+
+    #     if self.constraint_check == const.FAILED_DIALOG:
+    #         self.state[const.INTENT] = const.REJECT
+
+    #     return self.constraint_check
 
     def _response_to_done(self):
         """
