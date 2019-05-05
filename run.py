@@ -5,7 +5,7 @@ from dialogue_system import DialogueSystem
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--params_path', dest='params_path', type=str, default='')
-    parser.add_argument('--train', dest='train', type=int, default=0, help='Either to train (1) or not to test (0)')
+    parser.add_argument('--train', dest='train', type=int, default=0, help='Either to train (1) or to test (0)')
     args = parser.parse_args()
     args = vars(args)
 

@@ -64,7 +64,7 @@ class RuleBasedUserSimulator:
 
     def _sample_goal(self):
         sample_goal = random.choice(self.goal_list)
-        # print(f'User Goal: {sample_goal}\n')
+        # print(f'-------------------------------------------------------\nUser Goal: {sample_goal}\n')
         return sample_goal
 
     def _return_init_action(self):
@@ -143,7 +143,7 @@ class RuleBasedUserSimulator:
         done = False
         success = const.NO_OUTCOME_YET
         # First check round num, if equal to max then fail
-        if self.max_round > 0 and agent_action[const.ROUND] >= self.max_round:
+        if self.max_round > 0 and agent_action[const.ROUND] == self.max_round:
             done = True
             success = const.FAILED_DIALOG
             self.state[const.INTENT] = const.DONE
@@ -156,11 +156,6 @@ class RuleBasedUserSimulator:
                 self._response_to_inform(agent_action)
             elif agent_intent == const.MATCH_FOUND:
                 self._response_to_match_found(agent_action)
-            # elif agent_intent == const.CONFIRM_ANSWER:
-            #     self._response_to_confirm_answer(agent_action)
-            # elif agent_intent == const.THANKS:
-            #     success = self._response_to_thanks(agent_action)
-            #     done = True
             elif agent_intent == const.DONE:
                 success = self._response_to_done()
                 self.state[const.INTENT] = const.DONE
@@ -268,7 +263,8 @@ class RuleBasedUserSimulator:
                 self.state[const.INFORM_SLOTS][agent_request_key] = const.ANYTHING
                 self.state[const.REQUEST_SLOTS].clear()
                 self.state[const.HISTORY_SLOTS][agent_request_key] = const.ANYTHING
-        # if there are no request slot in the agent action (problably we should not be here), inform a random slot
+        # if there are no request slot in the agent action (problably we should not be here),
+        # take a random slot from rest
         else:
             if len(self.state[const.REST_SLOTS]) > 0:
                 random_slot = random.choice(self.state[const.REST_SLOTS])
@@ -309,19 +305,53 @@ class RuleBasedUserSimulator:
         # Remove from request slots if in it
         self.state[const.REQUEST_SLOTS].pop(agent_inform_key, None)
 
-        # First Case: If agent informs something that is in goal informs and the value it informed doesnt match,
-        # then inform the correct value
-        if agent_inform_value != self.goal[const.INFORM_SLOTS].get(agent_inform_key, agent_inform_value):
-            self.state[const.INTENT] = const.INFORM
-            self.state[const.INFORM_SLOTS][agent_inform_key] = self.goal[const.INFORM_SLOTS][agent_inform_key]
-            self.state[const.REQUEST_SLOTS].clear()
-            self.state[const.HISTORY_SLOTS][agent_inform_key] = self.goal[const.INFORM_SLOTS][agent_inform_key]
-        # Second Case: Otherwise pick a random action to take
+        # If agent informs something that is in user goal informs
+        if agent_inform_key in self.goal[const.INFORM_SLOTS]:
+            # if the value doesn't match the user goal inform value, then inform the correct value
+            if agent_inform_value != self.goal[const.INFORM_SLOTS].get(agent_inform_key, agent_inform_value):
+                self.state[const.INTENT] = const.INFORM
+                self.state[const.INFORM_SLOTS][agent_inform_key] = self.goal[const.INFORM_SLOTS][agent_inform_key]
+                self.state[const.REQUEST_SLOTS].clear()
+                self.state[const.HISTORY_SLOTS][agent_inform_key] = self.goal[const.INFORM_SLOTS][agent_inform_key]
+            # if it match the value take a random action
+            else:
+                # - If anything in state requests then request it
+                if self.state[const.REQUEST_SLOTS]:
+                    self.state[const.INTENT] = const.REQUEST
+                # - Else if something to say in rest slots, pick something
+                elif self.state[const.REST_SLOTS]:
+                    def_in = self.state[const.REST_SLOTS].pop(self.default_key, False)
+                    if self.state[const.REST_SLOTS]:
+                        key, value = random.choice(list(self.state[const.REST_SLOTS].items()))
+                        if value != const.UNKNOWN:
+                            self.state[const.INTENT] = const.INFORM
+                            self.state[const.INFORM_SLOTS][key] = value
+                            self.state[const.REST_SLOTS].pop(key)
+                            self.state[const.HISTORY_SLOTS][key] = value
+                        else:
+                            self.state[const.INTENT] = const.REQUEST
+                            self.state[const.REQUEST_SLOTS][key] = const.UNKNOWN
+                    else:
+                        self.state[const.INTENT] = const.REQUEST
+                        self.state[const.REQUEST_SLOTS][self.default_key] = const.UNKNOWN
+                    if def_in == const.UNKNOWN:
+                        self.state[const.REST_SLOTS][self.default_key] = const.UNKNOWN
+                else:
+                    self.state[const.INTENT] = const.THANKS
+        # if the agent informs something that is not in the user goal inform slots
         else:
-            # - If anything in state requests then request it
+            # chose from the request slots
             if self.state[const.REQUEST_SLOTS]:
-                self.state[const.INTENT] = const.REQUEST
-            # - Else if something to say in rest slots, pick something
+                def_in = self.state[const.REST_SLOTS].pop(self.default_key, False)
+                if self.state[const.REQUEST_SLOTS]:
+                    key, value = random.choice(list(self.state[const.REQUEST_SLOTS].items()))
+                    self.state[const.INTENT] = const.REQUEST
+                    self.state[const.REQUEST_SLOTS][key] = const.UNKNOWN
+                else:
+                    self.state[const.INTENT] = const.REQUEST
+                    self.state[const.REQUEST_SLOTS][self.default_key] = const.UNKNOWN
+                if def_in == const.UNKNOWN:
+                    self.state[const.REST_SLOTS][self.default_key] = const.UNKNOWN
             elif self.state[const.REST_SLOTS]:
                 def_in = self.state[const.REST_SLOTS].pop(self.default_key, False)
                 if self.state[const.REST_SLOTS]:
@@ -339,7 +369,6 @@ class RuleBasedUserSimulator:
                     self.state[const.REQUEST_SLOTS][self.default_key] = const.UNKNOWN
                 if def_in == const.UNKNOWN:
                     self.state[const.REST_SLOTS][self.default_key] = const.UNKNOWN
-            # - Otherwise respond with 'nothing to say' intent
             else:
                 self.state[const.INTENT] = const.THANKS
 
@@ -382,60 +411,6 @@ class RuleBasedUserSimulator:
             self.state[const.INTENT] = const.REJECT
             self.state[const.REQUEST_SLOTS].clear()
             self.state[const.INFORM_SLOTS].clear()
-
-    # def _response_to_confirm_answer(self, agent_action):
-    #     if len(self.state[const.REST_SLOTS]) > 0:
-    #         slot = random.choice(self.state[const.REST_SLOTS])
-
-    #         if slot in self.goal[const.REQUEST_SLOTS]:
-    #             self.state[const.INTENT] = const.REQUEST
-    #             self.state[const.REQUEST_SLOTS][slot] = const.UNKNOWN
-    #         elif slot in self.goal[const.INFORM_SLOTS]:
-    #             self.state[const.INTENT] = const.INFORM
-    #             self.state[const.INFORM_SLOTS][slot] = self.goal[const.INFORM_SLOTS][slot]
-
-    #             if slot in self.state[const.REST_SLOTS]:
-    #                 self.state[const.REST_SLOTS].pop(slot)
-
-    #     else:
-    #         self.state[const.INTENT] = const.THANKS
-
-    # def _response_to_thanks(self, agent_action):
-    #     self.constraint_check = const.SUCCESS_DIALOG
-    #     self.state[const.INTENT] = const.THANKS
-
-    #     # remove the ultimate slot from the user request slots
-    #     request_slot_set = copy.deepcopy(self.state[const.REQUEST_SLOTS])
-    #     if self.default_key in request_slot_set:
-    #         request_slot_set.pop(self.default_key)
-
-    #     # remove the ultimate slot from the user rest slots
-    #     rest_slot_set = copy.deepcopy(self.state[const.REST_SLOTS])
-    #     if self.default_key in rest_slot_set:
-    #         rest_slot_set.pop(self.default_key)
-
-    #     # if the user had not answered
-    #     if len(request_slot_set) > 0 or len(rest_slot_set) > 0:
-    #         self.constraint_check = const.FAILED_DIALOG
-
-    #     # check the user history slots
-    #     for info_slot in self.state[const.HISTORY_SLOTS]:
-    #         if self.state[const.HISTORY_SLOTS][info_slot] == const.NO_MATCH:
-    #             self.constraint_check = const.FAILED_DIALOG
-
-    #         if info_slot in self.goal[const.INFORM_SLOTS]:
-    #             if self.state[const.HISTORY_SLOTS][info_slot] != \
-    #                     self.goal[const.INFORM_SLOTS][info_slot]:
-    #                 self.constraint_check = const.FAILED_DIALOG
-
-    #     if self.default_key in agent_action[const.INFORM_SLOTS]:
-    #         if agent_action[const.INFORM_SLOTS][self.default_key] == const.NO_MATCH:
-    #             self.constraint_check = const.FAILED_DIALOG
-
-    #     if self.constraint_check == const.FAILED_DIALOG:
-    #         self.state[const.INTENT] = const.REJECT
-
-    #     return self.constraint_check
 
     def _response_to_done(self):
         """

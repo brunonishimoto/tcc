@@ -32,7 +32,10 @@ class DQNAgent:
         self.memory = []
         self.memory_index = 0
         self.max_memory_size = self.C['max_mem_size']
-        self.eps = self.C['epsilon_init']
+        self.eps_init = self.C['epsilon_init']
+        self.eps_stop = self.C['epsilon_stop']
+        self.explore_prob = self.eps_init
+        self.decay = self.C['decay_rate']
         self.vanilla = self.C['vanilla']
         self.lr = self.C['learning_rate']
         self.gamma = self.C['gamma']
@@ -48,6 +51,7 @@ class DQNAgent:
         self.state_size = state_size
         self.possible_actions = config.agent_actions
         self.num_actions = len(self.possible_actions)
+        self.mask_actions = np.ones(self.num_actions)
 
         self.rule_request_set = config.rule_requests
 
@@ -72,6 +76,7 @@ class DQNAgent:
 
         self.rule_current_slot_index = 0
         self.rule_phase = const.NOT_DONE
+        self.mask_actions.fill(1)
 
     def get_action(self, state, use_rule=False):
         """
@@ -90,8 +95,11 @@ class DQNAgent:
             dict: The action/response itself
 
         """
-        if self.eps > random.random():
-            index = random.randint(0, self.num_actions - 1)
+        self.explore_prob = (self.explore_prob - self.eps_stop) * np.exp(-self.decay) + self.eps_stop
+
+        if self.explore_prob > random.random():
+            index = np.argmax(np.random.rand(self.num_actions) * self.mask_actions)
+            # self.mask_actions[index] = 0
             action = self._map_index_to_action(index)
             return index, action
         else:
@@ -156,7 +164,8 @@ class DQNAgent:
             dict: The action/response itself
         """
 
-        index = np.argmax(self._dqn_predict_one(state))
+        index = np.argmax(self._dqn_predict_one(state) * self.mask_actions)
+        # self.mask_actions[index] = 0
         action = self._map_index_to_action(index)
         return index, action
 
