@@ -23,6 +23,7 @@ class DialogueSystem:
         self.use_simulator = run_dict['usersim']
         self.warmup_mem = run_dict['warmup_mem']
         self.num_ep_run = run_dict['num_ep_run']
+        self.num_ep_test = run_dict['num_ep_test']
         self.train_freq = run_dict['train_freq']
         self.max_round_num = run_dict['max_round_num']
         self.success_rate_threshold = run_dict['success_rate_threshold']
@@ -52,9 +53,14 @@ class DialogueSystem:
         # The metrics to store
         self.performance_path = params['agent']['performance_path']
         self.performance_metrics = {}
-        self.performance_metrics['success_rate'] = {}
-        self.performance_metrics['avg_round'] = {}
-        self.performance_metrics['avg_reward'] = {}
+        self.performance_metrics['train'] = {}
+        self.performance_metrics['test'] = {}
+        self.performance_metrics['train']['success_rate'] = {}
+        self.performance_metrics['train']['avg_round'] = {}
+        self.performance_metrics['train']['avg_reward'] = {}
+        self.performance_metrics['test']['success_rate'] = {}
+        self.performance_metrics['test']['avg_round'] = {}
+        self.performance_metrics['test']['avg_reward'] = {}
 
     def save_performance_records(self):
         """Save performance numbers."""
@@ -67,7 +73,7 @@ class DialogueSystem:
 
     def run_round(self, state, warmup=False, train=True):
         # 1) Agent takes action given state tracker's representation of dialogue (state)
-        agent_action_index, agent_action = self.dqn_agent.get_action(state, use_rule=warmup)
+        agent_action_index, agent_action = self.dqn_agent.get_action(state, use_rule=warmup, train=train)
         # 2) Update state tracker with the agent's action
         self.state_tracker.update_state_agent(agent_action)
         # 3) User takes action given agent action
@@ -108,7 +114,7 @@ class DialogueSystem:
 
         print('...Warmup Ended')
 
-    def episode_reset(self):
+    def episode_reset(self, train=True):
         """
         Resets the episode/conversation.
 
@@ -118,7 +124,7 @@ class DialogueSystem:
         # First reset the state tracker
         self.state_tracker.reset()
         # Then pick an init user action
-        user_action = self.user.reset()
+        user_action = self.user.reset(train)
         # Infuse with error
         self.emc.infuse_error(user_action)
         # And update state tracker
@@ -158,9 +164,9 @@ class DialogueSystem:
             # Train
             if episode % self.train_freq == 0:
                 # evaluate metrics
-                self.performance_metrics['success_rate'][episode] = period_success_total / self.train_freq
-                self.performance_metrics['avg_reward'][episode] = period_reward_total / self.train_freq
-                self.performance_metrics['avg_round'][episode] = period_round_total / self.train_freq
+                self.performance_metrics['train']['success_rate'][episode] = period_success_total / self.train_freq
+                self.performance_metrics['train']['avg_reward'][episode] = period_reward_total / self.train_freq
+                self.performance_metrics['train']['avg_round'][episode] = period_round_total / self.train_freq
 
                 # Check success rate
                 success_rate = period_success_total / self.train_freq
@@ -172,7 +178,8 @@ class DialogueSystem:
                 if success_rate > success_rate_best:
                     print(f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
                     success_rate_best = success_rate
-                    self.dqn_agent.save_weights()
+                    self.dqn_agent.save_weights(episode)
+                self.test(episode)
                 period_success_total = 0
                 period_reward_total = 0
                 period_round_total = 0
@@ -187,7 +194,7 @@ class DialogueSystem:
         self.warmup_run()
         self.train_run()
 
-    def test(self):
+    def test(self, train_episode):
         """
         Runs the loop that tests the agent.
 
@@ -196,13 +203,13 @@ class DialogueSystem:
 
         """
 
-        print('Testing Started...')
+        # print('Testing Started...')
         episode = 0
         period_reward_total = 0
         period_success_total = 0
         period_round_total = 0
-        while episode < self.num_ep_run:
-            self.episode_reset()
+        while episode < self.num_ep_test:
+            self.episode_reset(train=False)
             episode += 1
             ep_reward = 0
             done = False
@@ -219,9 +226,9 @@ class DialogueSystem:
             period_success_total += success
             period_round_total += rounds
             period_reward_total += ep_reward
-            print(f'Episode: {episode} Success: {success} Reward: {ep_reward}')
-        self.performance_metrics['success_rate'][episode] = period_success_total / self.num_ep_run
-        self.performance_metrics['avg_reward'][episode] = period_reward_total / self.num_ep_run
-        self.performance_metrics['avg_round'][episode] = period_round_total / self.num_ep_run
-        print('...Testing Ended')
-        self.save_performance_records()
+            # print(f'Episode: {episode} Success: {success} Reward: {ep_reward}')
+        self.performance_metrics['test']['success_rate'][train_episode] = period_success_total / self.num_ep_test
+        self.performance_metrics['test']['avg_reward'][train_episode] = period_reward_total / self.num_ep_test
+        self.performance_metrics['test']['avg_round'][train_episode] = period_round_total / self.num_ep_test
+        # print('...Testing Ended')
+        # self.save_performance_records()

@@ -35,7 +35,7 @@ class DQNAgent:
         self.eps_init = self.C['epsilon_init']
         self.eps_stop = self.C['epsilon_stop']
         self.explore_prob = self.eps_init
-        self.decay = self.C['decay_rate']
+        self.decay_rate = self.C['decay_rate']
         self.vanilla = self.C['vanilla']
         self.lr = self.C['learning_rate']
         self.gamma = self.C['gamma']
@@ -51,7 +51,12 @@ class DQNAgent:
         self.state_size = state_size
         self.possible_actions = config.agent_actions
         self.num_actions = len(self.possible_actions)
-        self.mask_actions = np.ones(self.num_actions)
+
+        self.decay = self.C['decay']
+        self.agent = self.C['agent']
+        self.explore = self.C['explore']
+        self.boltzmanC = 1.0
+        self.action_counts = np.ones(self.num_actions)
 
         self.rule_request_set = config.rule_requests
 
@@ -73,12 +78,10 @@ class DQNAgent:
 
     def reset(self):
         """Resets the rule-based variables."""
-
         self.rule_current_slot_index = 0
         self.rule_phase = const.NOT_DONE
-        self.mask_actions.fill(1)
 
-    def get_action(self, state, use_rule=False):
+    def get_action(self, state, use_rule=False, train=True):
         """
         Returns the action of the agent given a state.
 
@@ -95,18 +98,36 @@ class DQNAgent:
             dict: The action/response itself
 
         """
-        self.explore_prob = (self.explore_prob - self.eps_stop) * np.exp(-self.decay) + self.eps_stop
+        if train:
+            if self.decay == 'exponential':
+                # Exponential decay
+                self.explore_prob = (self.explore_prob - self.eps_stop) * np.exp(-self.decay_rate) + self.eps_stop
+            elif self.decay == 'linear':
+                # Linear decay
+                if (self.explore_prob * self.decay < self.eps_stop):
+                    self.explore_prob = self.eps_stop
+                else:
+                    self.explore_prob = self.explore_prob * self.decay
 
-        if self.explore_prob > random.random():
-            index = np.argmax(np.random.rand(self.num_actions) * self.mask_actions)
-            # self.mask_actions[index] = 0
-            action = self._map_index_to_action(index)
-            return index, action
-        else:
-            if use_rule:
-                return self._rule_action()
+            if self.explore_prob > random.random():
+                if self.explore == 'boltzmann':
+                    # Boltzmann
+                    q_values = self._dqn_predict(state.reshape(1, self.state_size))
+                    exp_values = np.exp(q_values)
+                    probs = exp_values / np.sum(exp_values)
+                    index = np.random.choice(list(range(self.num_actions)), p=probs.reshape(self.num_actions))
+                else:
+                    index = np.argmax(np.random.rand(self.num_actions))
+
+                action = self._map_index_to_action(index)
+                return index, action
             else:
-                return self._dqn_action(state)
+                if use_rule:
+                    return self._rule_action()
+                else:
+                    return self._dqn_action(state)
+        else:
+            return self._dqn_action(state, train=False)
 
     def _rule_action(self):
         """
@@ -152,7 +173,7 @@ class DQNAgent:
                 return i
         raise ValueError(f'Response: {response} not found in possible actions')
 
-    def _dqn_action(self, state):
+    def _dqn_action(self, state, train=True):
         """
         Returns a behavior model output given a state.
 
@@ -163,9 +184,20 @@ class DQNAgent:
             int: The index of the action in the possible actions
             dict: The action/response itself
         """
+        index = 0
+        if self.agent == 'boltzmann' and train:
+            # BoltzmanGumbelQPolicy
+            q_values = self._dqn_predict(state.reshape(1, self.state_size))
 
-        index = np.argmax(self._dqn_predict_one(state) * self.mask_actions)
-        # self.mask_actions[index] = 0
+            beta = self.boltzmanC / np.sqrt(self.action_counts)
+            Z = np.random.gumbel(size=q_values.reshape(self.num_actions).shape)
+
+            perturbation = beta * Z
+            perturbed_q_values = q_values.reshape(self.num_actions) + perturbation
+            index = np.argmax(perturbed_q_values)
+        else:
+            index = np.argmax(self._dqn_predict_one(state))
+
         action = self._map_index_to_action(index)
         return index, action
 
@@ -290,14 +322,14 @@ class DQNAgent:
 
         self.tar_model.set_weights(self.beh_model.get_weights())
 
-    def save_weights(self):
+    def save_weights(self, episode):
         """Saves the weights of both models in two h5 files."""
 
         if not self.save_weights_file_path:
             return
-        beh_save_file_path = re.sub(r'\.h5', r'_beh.h5', self.save_weights_file_path)
+        beh_save_file_path = re.sub(f'\.h5', rf'/ep{episode}_beh.h5', self.save_weights_file_path)
         self.beh_model.save_weights(beh_save_file_path)
-        tar_save_file_path = re.sub(r'\.h5', r'_tar.h5', self.save_weights_file_path)
+        tar_save_file_path = re.sub(r'\.h5', rf'/ep{episode}_tar.h5', self.save_weights_file_path)
         self.tar_model.save_weights(tar_save_file_path)
 
     def _load_weights(self):

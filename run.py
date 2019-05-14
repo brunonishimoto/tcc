@@ -10,7 +10,7 @@ if __name__ == "__main__":
     args = vars(args)
 
     # Load params json into dict
-    PARAMS_FILE_PATH = 'dialogue_system/params/params.json'
+    PARAMS_FILE_PATH = 'params/params.json'
     if len(args['params_path']) > 0:
         params_file = args['params_path']
     else:
