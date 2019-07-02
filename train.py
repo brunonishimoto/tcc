@@ -9,10 +9,9 @@ CHECKPOINTS = 'checkpoints/'
 PARAMS_FILE_PATH = []
 
 for file in os.listdir(ROOT):
-    if not os.path.exists(os.path.join(CHECKPOINTS, file.replace('params', 'performance'))):
-        if (file == 'params100_1.json' or file == 'params100_5.json'):
+    if file == 'params_agt_boltz_4.json' or file == 'params_const.json':
+        if not os.path.exists(os.path.join(CHECKPOINTS, file.replace('params', 'performance'))):
             PARAMS_FILE_PATH.append(os.path.join(ROOT, file))
-
 
 print(PARAMS_FILE_PATH)
 for run in range(10):
@@ -24,8 +23,10 @@ for run in range(10):
 
         if not os.path.exists(params['agent']['save_weights_file_path'].replace('.h5', f'/{run}')):
             os.makedirs(params['agent']['save_weights_file_path'].replace('.h5', f'/{run}'))
-        params['agent']['performance_path'] = params['agent']['performance_path'].replace('.json', f'run{run}.json')
+        params['agent']['performance_path'] = params['agent']['performance_path'].replace('.json', f'_run{run}.json')
         params['agent']['save_weights_file_path'] = params['agent']['save_weights_file_path'].replace('.h5', f'/{run}.h5')
-        dialogue_system = DialogueSystem(params)
 
-        dialogue_system.train()
+        if not os.path.exists(params['agent']['performance_path']):
+            dialogue_system = DialogueSystem(params)
+
+            dialogue_system.train()

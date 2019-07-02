@@ -18,8 +18,8 @@ class RuleBasedUserSimulator:
         """
 
         self.goal_list = goal_list
-        self.train_list = goal_list[:100]
-        self.test_list = goal_list[100:]
+        self.train_list = goal_list[:90]
+        self.test_list = goal_list[90:]
         self.max_round = params['run']['max_round_num']
         self.default_key = config.usersim_default_key
         # A list of REQUIRED to be in the first action inform keys
@@ -30,7 +30,7 @@ class RuleBasedUserSimulator:
         self.database = database
         # ---------
 
-    def reset(self, train=True):
+    def reset(self, train=True, test_episode=None):
         """
         Resets the user sim. by emptying the state and returning the initial action.
 
@@ -39,7 +39,7 @@ class RuleBasedUserSimulator:
         """
 
         # Sample a random goal
-        self.goal = self._sample_goal(train)
+        self.goal = self._sample_goal(train, test_episode)
         # Add default slot to requests of goal
         self.goal[const.REQUEST_SLOTS][self.default_key] = const.UNKNOWN
 
@@ -64,12 +64,13 @@ class RuleBasedUserSimulator:
 
         return self._return_init_action()
 
-    def _sample_goal(self, train=True):
+    def _sample_goal(self, train=True, test_episode=None):
         if train:
             sample_goal = random.choice(self.train_list)
         else:
+            # sample_goal = self.test_list[test_episode % 28]
             sample_goal = random.choice(self.test_list)
-        # print(f'-------------------------------------------------------\nUser Goal: {sample_goal}\n')
+        print(f'-------------------------------------------------------\nUser Goal: {sample_goal}\n')
         return sample_goal
 
     def _return_init_action(self):

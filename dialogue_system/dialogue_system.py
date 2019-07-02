@@ -7,6 +7,7 @@ from dialogue_system.utils.util import remove_empty_slots
 import pickle
 import json
 import math
+import random
 
 
 class DialogueSystem:
@@ -27,6 +28,9 @@ class DialogueSystem:
         self.train_freq = run_dict['train_freq']
         self.max_round_num = run_dict['max_round_num']
         self.success_rate_threshold = run_dict['success_rate_threshold']
+        self.sigma_init = params['agent']['sigma_init']
+        self.sigma_stop = params['agent']['sigma_stop']
+        self.sigma_decay = params['agent']['sigma_decay']
 
         # Load movie DB
         # Note: If you get an unpickling error here then run 'pickle_converter.py' and it should fix it
@@ -112,9 +116,16 @@ class DialogueSystem:
                 total_step += 1
                 state = next_state
 
+        # Copy
+        self.dqn_agent.copy()
+        # Train the agent with the warmup replay memory
+        self.dqn_agent.train()
+
+        # Test on the actual weights (jump start)
+        self.test(train_episode=0)
         print('...Warmup Ended')
 
-    def episode_reset(self, train=True):
+    def episode_reset(self, train=True, test_episode=None):
         """
         Resets the episode/conversation.
 
@@ -124,7 +135,7 @@ class DialogueSystem:
         # First reset the state tracker
         self.state_tracker.reset()
         # Then pick an init user action
-        user_action = self.user.reset(train)
+        user_action = self.user.reset(train, test_episode)
         # Infuse with error
         self.emc.infuse_error(user_action)
         # And update state tracker
@@ -152,8 +163,17 @@ class DialogueSystem:
             done = False
             state = self.state_tracker.get_state()
             rounds = 0
+
+            # use sigma for partial switch to agent
+            use_rule = False
+            a = -float(self.sigma_init - self.sigma_stop) / self.sigma_decay
+            b = float(self.sigma_init)
+            sigma = max(self.sigma_stop, a * float(episode) + b)
+            if sigma > random.random():
+                use_rule = True
+
             while not done:
-                next_state, reward, done, success = self.run_round(state)
+                next_state, reward, done, success = self.run_round(state, warmup=use_rule)
                 period_reward_total += reward
                 state = next_state
                 rounds += 1
@@ -179,7 +199,6 @@ class DialogueSystem:
                     print(f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
                     success_rate_best = success_rate
                     self.dqn_agent.save_weights(episode)
-                self.test(episode)
                 period_success_total = 0
                 period_reward_total = 0
                 period_round_total = 0
@@ -187,6 +206,16 @@ class DialogueSystem:
                 self.dqn_agent.copy()
                 # Train
                 self.dqn_agent.train()
+
+                # Test on the actual weights
+                self.test(episode)
+
+                # with open(f'{self.performance_path}_epsilon', 'a') as f:
+                #     f.write(f'{self.dqn_agent.explore_prob}\n')
+                # with open(f'{self.performance_path}_tau', 'a') as f:
+                #     f.write(f'{self.dqn_agent.tau}\n')
+                # with open(f'{self.performance_path}_sigma', 'a') as f:
+                #     f.write(f'{sigma}\n')
         print('...Training Ended')
         self.save_performance_records()
 
@@ -194,7 +223,7 @@ class DialogueSystem:
         self.warmup_run()
         self.train_run()
 
-    def test(self, train_episode):
+    def test(self, train_episode=0):
         """
         Runs the loop that tests the agent.
 
@@ -209,7 +238,7 @@ class DialogueSystem:
         period_success_total = 0
         period_round_total = 0
         while episode < self.num_ep_test:
-            self.episode_reset(train=False)
+            self.episode_reset(train=False, test_episode=episode)
             episode += 1
             ep_reward = 0
             done = False

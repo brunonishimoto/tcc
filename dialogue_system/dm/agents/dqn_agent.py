@@ -29,6 +29,7 @@ class DQNAgent:
         """
 
         self.C = params['agent']
+        self.name = self.C['name']
         self.memory = []
         self.memory_index = 0
         self.max_memory_size = self.C['max_mem_size']
@@ -38,9 +39,19 @@ class DQNAgent:
         self.decay_rate = self.C['decay_rate']
         self.vanilla = self.C['vanilla']
         self.lr = self.C['learning_rate']
+        self.lr_decay = self.C['lr_decay']
         self.gamma = self.C['gamma']
         self.batch_size = self.C['batch_size']
         self.hidden_size = self.C['dqn_hidden_size']
+        self.sigma_init = self.C['sigma_init']
+        self.sigma_stop = self.C['sigma_stop']
+        self.sigma_decay = self.C['sigma_decay']
+        self.sigma = self.sigma_init
+        self.tau_init = self.C['tau_init']
+        self.tau_stop = self.C['tau_stop']
+        self.tau_decay = self.C['tau_decay']
+        self.tau = self.tau_init
+        self.num_steps = 0
 
         self.load_weights_file_path = self.C['load_weights_file_path']
         self.save_weights_file_path = self.C['save_weights_file_path']
@@ -73,7 +84,7 @@ class DQNAgent:
         model = Sequential()
         model.add(Dense(self.hidden_size, input_dim=self.state_size, activation='relu'))
         model.add(Dense(self.num_actions, activation='linear'))
-        model.compile(loss='mse', optimizer=Adam(lr=self.lr))
+        model.compile(loss='mse', optimizer=Adam(lr=self.lr, decay=self.lr_decay))
         return model
 
     def reset(self):
@@ -98,22 +109,40 @@ class DQNAgent:
             dict: The action/response itself
 
         """
+        # if use_rule:
+        #     if 0.05 > random.random():
+        #         index = np.argmax(np.random.rand(self.num_actions))
+        #         action = self._map_index_to_action(index)
+        #         return index, action
+        #     else:
+        #         return self._rule_action()
         if train:
+            self.num_steps += 1
+            # var = self.save_weights_file_path.split('/')
+            # with open(f'./epsilon_{var[1]}_{var[2]}.txt', 'a') as f:
+            #     f.write(f'{self.explore_prob}\n')
             if self.decay == 'exponential':
                 # Exponential decay
                 self.explore_prob = (self.explore_prob - self.eps_stop) * np.exp(-self.decay_rate) + self.eps_stop
             elif self.decay == 'linear':
                 # Linear decay
-                if (self.explore_prob * self.decay < self.eps_stop):
-                    self.explore_prob = self.eps_stop
-                else:
-                    self.explore_prob = self.explore_prob * self.decay
+                a = -float(self.eps_init - self.eps_stop) / self.decay_rate
+                b = float(self.eps_init)
+                self.explore_prob = max(self.eps_stop, a * float(self.num_steps) + b)
+
+                a = -float(self.tau_init - self.tau_stop) / self.tau_decay
+                b = float(self.tau_init)
+                self.tau = max(self.tau_stop, a * float(self.num_steps) + b)
 
             if self.explore_prob > random.random():
                 if self.explore == 'boltzmann':
                     # Boltzmann
+
                     q_values = self._dqn_predict(state.reshape(1, self.state_size))
-                    exp_values = np.exp(q_values)
+                    q_modified = q_values / self.tau
+                    q_max = np.max(q_modified)
+                    exp_values = np.exp(q_modified - q_max)
+
                     probs = exp_values / np.sum(exp_values)
                     index = np.random.choice(list(range(self.num_actions)), p=probs.reshape(self.num_actions))
                 else:
@@ -122,6 +151,12 @@ class DQNAgent:
                 action = self._map_index_to_action(index)
                 return index, action
             else:
+                # a = -float(self.sigma_init - self.sigma_stop) / 40000
+                # b = float(self.sigma_init)
+                # self.sigma = max(self.sigma_stop, a * float(self.num_steps) + b)
+                # var = self.save_weights_file_path.split('/')
+                # with open(f'./sigma_{var[1]}_{var[2]}.txt', 'a') as f:
+                #     f.write(f'{self.sigma}\n')
                 if use_rule:
                     return self._rule_action()
                 else:
@@ -185,16 +220,33 @@ class DQNAgent:
             dict: The action/response itself
         """
         index = 0
-        if self.agent == 'boltzmann' and train:
-            # BoltzmanGumbelQPolicy
-            q_values = self._dqn_predict(state.reshape(1, self.state_size))
+        if train:
+            if self.agent == 'gumbelBoltzmann':
+                # BoltzmanGumbelQPolicy
+                q_values = self._dqn_predict(state.reshape(1, self.state_size))
 
-            beta = self.boltzmanC / np.sqrt(self.action_counts)
-            Z = np.random.gumbel(size=q_values.reshape(self.num_actions).shape)
+                beta = self.boltzmanC / np.sqrt(self.action_counts)
+                Z = np.random.gumbel(size=q_values.reshape(self.num_actions).shape)
 
-            perturbation = beta * Z
-            perturbed_q_values = q_values.reshape(self.num_actions) + perturbation
-            index = np.argmax(perturbed_q_values)
+                perturbation = beta * Z
+                perturbed_q_values = q_values.reshape(self.num_actions) + perturbation
+                index = np.argmax(perturbed_q_values)
+                self.action_counts[index] += 1
+            elif self.agent == 'boltzmann':
+                # Boltzmann
+                # a = -float(self.tau_init - self.tau_stop) / self.tau_decay
+                # b = float(self.tau_init)
+                # self.tau = max(self.tau_stop, a * float(self.num_steps) + b)
+
+                q_values = self._dqn_predict(state.reshape(1, self.state_size))
+                q_modified = q_values / self.tau
+                q_max = np.max(q_modified)
+                exp_values = np.exp(q_modified - q_max)
+
+                probs = exp_values / np.sum(exp_values)
+                index = np.random.choice(list(range(self.num_actions)), p=probs.reshape(self.num_actions))
+            else:
+                index = np.argmax(self._dqn_predict_one(state))
         else:
             index = np.argmax(self._dqn_predict_one(state))
 
