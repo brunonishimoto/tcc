@@ -8,16 +8,12 @@ import pickle
 import json
 import math
 import random
+import collections
 
 
 class DialogueSystem:
 
     def __init__(self, params):
-        # Load file path params
-        file_path_dict = params['db_file_paths']
-        self.database_path = file_path_dict['database']
-        self.dict_path = file_path_dict['dict']
-        self.goals_path = file_path_dict['user_goals']
 
         # Load run params
         run_dict = params['run']
@@ -47,11 +43,12 @@ class DialogueSystem:
 
         # Init. Objects
         if self.use_simulator:
-            self.user = RuleBasedUserSimulator(self.user_goals, params, self.database)
+            self.user = RuleBasedUserSimulator(params)
         else:
             self.user = RealUser(params)
-        self.emc = ErrorModelController(self.db_dict, params)
-        self.state_tracker = StateTracker(self.database, params)
+
+        self.emc = ErrorModelController(params)
+        self.state_tracker = StateTracker(params)
         self.dqn_agent = DQNAgent(self.state_tracker.get_state_size(), params)
 
         # The metrics to store
@@ -210,12 +207,6 @@ class DialogueSystem:
                 # Test on the actual weights
                 self.test(episode)
 
-                # with open(f'{self.performance_path}_epsilon', 'a') as f:
-                #     f.write(f'{self.dqn_agent.explore_prob}\n')
-                # with open(f'{self.performance_path}_tau', 'a') as f:
-                #     f.write(f'{self.dqn_agent.tau}\n')
-                # with open(f'{self.performance_path}_sigma', 'a') as f:
-                #     f.write(f'{sigma}\n')
         print('...Training Ended')
         self.save_performance_records()
 

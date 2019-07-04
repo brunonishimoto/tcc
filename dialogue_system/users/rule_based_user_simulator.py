@@ -7,28 +7,34 @@ import copy
 class RuleBasedUserSimulator:
     """Simulates a real user, to train the agent with reinforcement learning."""
 
-    def __init__(self, goal_list, params, database):
+    def __init__(self, params, database):
         """
         The constructor for UserSimulator. Sets dialogue config variables.
 
         Parameters:
-            goal_list (list): User goals loaded from file
             params (dict): Dict of params loaded from file
             database (dict): The database in the format dict(long: dict)
         """
 
-        self.goal_list = goal_list
-        self.train_list = goal_list[:90]
+        # Load goal File
+        goals_path = params['db_file_paths']['user_goals']
+        self.goal_list = pickle.load(open(goals_path, 'rb'), encoding='latin1')
+
+        # Load movie DB
+        # Note: If you get an unpickling error here then run 'pickle_converter.py' and it should fix it
+        database_path = params['db_file_paths']['database']
+        self.database = pickle.load(open(database_path, 'rb'), encoding='latin1')
+
+        # Clean DB
+        remove_empty_slots(self.database)
+
+        self.train_list = goal_list[:90]  # TODO: Make the split rate as a parameter
         self.test_list = goal_list[90:]
         self.max_round = params['run']['max_round_num']
         self.default_key = config.usersim_default_key
         # A list of REQUIRED to be in the first action inform keys
         self.init_informs = config.usersim_required_init_inform_keys
         self.no_query = config.no_query_keys
-
-        # TEMP ----
-        self.database = database
-        # ---------
 
     def reset(self, train=True, test_episode=None):
         """

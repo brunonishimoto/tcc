@@ -6,17 +6,19 @@ import random
 class ErrorModelController:
     """Adds error to the user action."""
 
-    def __init__(self, db_dict, params):
+    def __init__(self, params):
         """
         The constructor for ErrorModelController.
 
         Saves items in params, etc.
 
         Parameters:
-            db_dict (dict): The database dict with format dict(string: list) where each key is the slot name and
-                            the list is of possible values
             params (dict): Loaded params in dict
         """
+
+        # Load movie dict
+        dict_path = params['db_file_paths']['dict']
+        db_dict = pickle.load(open(dict_path, 'rb'), encoding='latin1')
 
         self.movie_dict = db_dict
         self.slot_error_prob = params['emc']['slot_error_prob']
