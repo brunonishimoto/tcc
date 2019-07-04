@@ -28,19 +28,6 @@ class DialogueSystem:
         self.sigma_stop = params['agent']['sigma_stop']
         self.sigma_decay = params['agent']['sigma_decay']
 
-        # Load movie DB
-        # Note: If you get an unpickling error here then run 'pickle_converter.py' and it should fix it
-        self.database = pickle.load(open(self.database_path, 'rb'), encoding='latin1')
-
-        # Clean DB
-        remove_empty_slots(self.database)
-
-        # Load movie dict
-        self.db_dict = pickle.load(open(self.dict_path, 'rb'), encoding='latin1')
-
-        # Load goal File
-        self.user_goals = pickle.load(open(self.goals_path, 'rb'), encoding='latin1')
-
         # Init. Objects
         if self.use_simulator:
             self.user = RuleBasedUserSimulator(params)
@@ -53,9 +40,7 @@ class DialogueSystem:
 
         # The metrics to store
         self.performance_path = params['agent']['performance_path']
-        self.performance_metrics = {}
-        self.performance_metrics['train'] = {}
-        self.performance_metrics['test'] = {}
+        self.performance_metrics = collections.defaultdict(dict)
         self.performance_metrics['train']['success_rate'] = {}
         self.performance_metrics['train']['avg_round'] = {}
         self.performance_metrics['train']['avg_reward'] = {}

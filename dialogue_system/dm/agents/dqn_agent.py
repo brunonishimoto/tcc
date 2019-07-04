@@ -118,9 +118,6 @@ class DQNAgent:
         #         return self._rule_action()
         if train:
             self.num_steps += 1
-            # var = self.save_weights_file_path.split('/')
-            # with open(f'./epsilon_{var[1]}_{var[2]}.txt', 'a') as f:
-            #     f.write(f'{self.explore_prob}\n')
             if self.decay == 'exponential':
                 # Exponential decay
                 self.explore_prob = (self.explore_prob - self.eps_stop) * np.exp(-self.decay_rate) + self.eps_stop
@@ -151,12 +148,6 @@ class DQNAgent:
                 action = self._map_index_to_action(index)
                 return index, action
             else:
-                # a = -float(self.sigma_init - self.sigma_stop) / 40000
-                # b = float(self.sigma_init)
-                # self.sigma = max(self.sigma_stop, a * float(self.num_steps) + b)
-                # var = self.save_weights_file_path.split('/')
-                # with open(f'./sigma_{var[1]}_{var[2]}.txt', 'a') as f:
-                #     f.write(f'{self.sigma}\n')
                 if use_rule:
                     return self._rule_action()
                 else:
@@ -234,9 +225,6 @@ class DQNAgent:
                 self.action_counts[index] += 1
             elif self.agent == 'boltzmann':
                 # Boltzmann
-                # a = -float(self.tau_init - self.tau_stop) / self.tau_decay
-                # b = float(self.tau_init)
-                # self.tau = max(self.tau_stop, a * float(self.num_steps) + b)
 
                 q_values = self._dqn_predict(state.reshape(1, self.state_size))
                 q_modified = q_values / self.tau
@@ -379,7 +367,7 @@ class DQNAgent:
 
         if not self.save_weights_file_path:
             return
-        beh_save_file_path = re.sub(f'\.h5', rf'/ep{episode}_beh.h5', self.save_weights_file_path)
+        beh_save_file_path = re.sub(r'\.h5', rf'/ep{episode}_beh.h5', self.save_weights_file_path)
         self.beh_model.save_weights(beh_save_file_path)
         tar_save_file_path = re.sub(r'\.h5', rf'/ep{episode}_tar.h5', self.save_weights_file_path)
         self.tar_model.save_weights(tar_save_file_path)
