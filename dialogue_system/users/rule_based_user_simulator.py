@@ -2,12 +2,15 @@ import dialogue_system.dialogue_config as config
 import dialogue_system.constants as const
 import random
 import copy
+import pickle
+
+from dialogue_system.utils.util import remove_empty_slots
 
 
 class RuleBasedUserSimulator:
     """Simulates a real user, to train the agent with reinforcement learning."""
 
-    def __init__(self, params, database):
+    def __init__(self, params):
         """
         The constructor for UserSimulator. Sets dialogue config variables.
 
@@ -28,8 +31,8 @@ class RuleBasedUserSimulator:
         # Clean DB
         remove_empty_slots(self.database)
 
-        self.train_list = goal_list[:90]  # TODO: Make the split rate as a parameter
-        self.test_list = goal_list[90:]
+        self.train_list = self.goal_list[:90]  # TODO: Make the split rate as a parameter
+        self.test_list = self.goal_list[90:]
         self.max_round = params['run']['max_round_num']
         self.default_key = config.usersim_default_key
         # A list of REQUIRED to be in the first action inform keys
@@ -76,7 +79,7 @@ class RuleBasedUserSimulator:
         else:
             # sample_goal = self.test_list[test_episode % 28]
             sample_goal = random.choice(self.test_list)
-        print(f'-------------------------------------------------------\nUser Goal: {sample_goal}\n')
+        # print(f'-------------------------------------------------------\nUser Goal: {sample_goal}\n')
         return sample_goal
 
     def _return_init_action(self):

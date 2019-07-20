@@ -33,24 +33,12 @@ class DQNAgent:
         self.memory = []
         self.memory_index = 0
         self.max_memory_size = self.C['max_mem_size']
-        self.eps_init = self.C['epsilon_init']
-        self.eps_stop = self.C['epsilon_stop']
-        self.explore_prob = self.eps_init
-        self.decay_rate = self.C['decay_rate']
         self.vanilla = self.C['vanilla']
         self.lr = self.C['learning_rate']
         self.lr_decay = self.C['lr_decay']
         self.gamma = self.C['gamma']
         self.batch_size = self.C['batch_size']
         self.hidden_size = self.C['dqn_hidden_size']
-        self.sigma_init = self.C['sigma_init']
-        self.sigma_stop = self.C['sigma_stop']
-        self.sigma_decay = self.C['sigma_decay']
-        self.sigma = self.sigma_init
-        self.tau_init = self.C['tau_init']
-        self.tau_stop = self.C['tau_stop']
-        self.tau_decay = self.C['tau_decay']
-        self.tau = self.tau_init
         self.num_steps = 0
 
         self.load_weights_file_path = self.C['load_weights_file_path']
@@ -66,7 +54,6 @@ class DQNAgent:
         self.decay = self.C['decay']
         self.agent = self.C['agent']
         self.explore = self.C['explore']
-        self.boltzmanC = 1.0
         self.action_counts = np.ones(self.num_actions)
 
         self.rule_request_set = config.rule_requests
@@ -74,7 +61,7 @@ class DQNAgent:
         self.beh_model = self._build_model()
         self.tar_model = self._build_model()
 
-        self._load_weights()
+        self._load_weights(10)
 
         self.reset()
 
@@ -109,51 +96,9 @@ class DQNAgent:
             dict: The action/response itself
 
         """
-        # if use_rule:
-        #     if 0.05 > random.random():
-        #         index = np.argmax(np.random.rand(self.num_actions))
-        #         action = self._map_index_to_action(index)
-        #         return index, action
-        #     else:
-        #         return self._rule_action()
-        if train:
-            self.num_steps += 1
-            if self.decay == 'exponential':
-                # Exponential decay
-                self.explore_prob = (self.explore_prob - self.eps_stop) * np.exp(-self.decay_rate) + self.eps_stop
-            elif self.decay == 'linear':
-                # Linear decay
-                a = -float(self.eps_init - self.eps_stop) / self.decay_rate
-                b = float(self.eps_init)
-                self.explore_prob = max(self.eps_stop, a * float(self.num_steps) + b)
 
-                a = -float(self.tau_init - self.tau_stop) / self.tau_decay
-                b = float(self.tau_init)
-                self.tau = max(self.tau_stop, a * float(self.num_steps) + b)
-
-            if self.explore_prob > random.random():
-                if self.explore == 'boltzmann':
-                    # Boltzmann
-
-                    q_values = self._dqn_predict(state.reshape(1, self.state_size))
-                    q_modified = q_values / self.tau
-                    q_max = np.max(q_modified)
-                    exp_values = np.exp(q_modified - q_max)
-
-                    probs = exp_values / np.sum(exp_values)
-                    index = np.random.choice(list(range(self.num_actions)), p=probs.reshape(self.num_actions))
-                else:
-                    index = np.argmax(np.random.rand(self.num_actions))
-
-                action = self._map_index_to_action(index)
-                return index, action
-            else:
-                if use_rule:
-                    return self._rule_action()
-                else:
-                    return self._dqn_action(state)
-        else:
-            return self._dqn_action(state, train=False)
+        # Implent in child classes
+        pass
 
     def _rule_action(self):
         """
@@ -199,7 +144,7 @@ class DQNAgent:
                 return i
         raise ValueError(f'Response: {response} not found in possible actions')
 
-    def _dqn_action(self, state, train=True):
+    def _dqn_action(self, state):
         """
         Returns a behavior model output given a state.
 
@@ -210,33 +155,7 @@ class DQNAgent:
             int: The index of the action in the possible actions
             dict: The action/response itself
         """
-        index = 0
-        if train:
-            if self.agent == 'gumbelBoltzmann':
-                # BoltzmanGumbelQPolicy
-                q_values = self._dqn_predict(state.reshape(1, self.state_size))
-
-                beta = self.boltzmanC / np.sqrt(self.action_counts)
-                Z = np.random.gumbel(size=q_values.reshape(self.num_actions).shape)
-
-                perturbation = beta * Z
-                perturbed_q_values = q_values.reshape(self.num_actions) + perturbation
-                index = np.argmax(perturbed_q_values)
-                self.action_counts[index] += 1
-            elif self.agent == 'boltzmann':
-                # Boltzmann
-
-                q_values = self._dqn_predict(state.reshape(1, self.state_size))
-                q_modified = q_values / self.tau
-                q_max = np.max(q_modified)
-                exp_values = np.exp(q_modified - q_max)
-
-                probs = exp_values / np.sum(exp_values)
-                index = np.random.choice(list(range(self.num_actions)), p=probs.reshape(self.num_actions))
-            else:
-                index = np.argmax(self._dqn_predict_one(state))
-        else:
-            index = np.argmax(self._dqn_predict_one(state))
+        index = np.argmax(self._dqn_predict_one(state))
 
         action = self._map_index_to_action(index)
         return index, action
@@ -372,12 +291,12 @@ class DQNAgent:
         tar_save_file_path = re.sub(r'\.h5', rf'/ep{episode}_tar.h5', self.save_weights_file_path)
         self.tar_model.save_weights(tar_save_file_path)
 
-    def _load_weights(self):
+    def _load_weights(self, epsiode):
         """Loads the weights of both models from two h5 files."""
 
         if not self.load_weights_file_path:
             return
-        beh_load_file_path = re.sub(r'\.h5', r'_beh.h5', self.load_weights_file_path)
+        beh_load_file_path = re.sub(r'\.h5', r'/ep{episode}_beh.h5', self.load_weights_file_path)
         self.beh_model.load_weights(beh_load_file_path)
-        tar_load_file_path = re.sub(r'\.h5', r'_tar.h5', self.load_weights_file_path)
+        tar_load_file_path = re.sub(r'\.h5', r'/ep{episode}_tar.h5', self.load_weights_file_path)
         self.tar_model.load_weights(tar_load_file_path)

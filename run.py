@@ -1,6 +1,6 @@
 import argparse
 import json
-from dialogue_system import DialogueSystem
+from trainer import Trainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -10,7 +10,7 @@ if __name__ == "__main__":
     args = vars(args)
 
     # Load params json into dict
-    PARAMS_FILE_PATH = 'params/params.json'
+    PARAMS_FILE_PATH = 'params/params_const.json'
     if len(args['params_path']) > 0:
         params_file = args['params_path']
     else:
@@ -19,9 +19,9 @@ if __name__ == "__main__":
     with open(params_file) as f:
         params = json.load(f)
 
-    dialogue_system = DialogueSystem(params)
-
-    if (args['train'] == 1):
-        dialogue_system.train()
-    elif (args['train'] == 0):
-        dialogue_system.test()
+    trainer = Trainer(params)
+    trainer.train()
+    # if (args['train'] == 1):
+    #     dialogue_system.train()
+    # elif (args['train'] == 0):
+    #     dialogue_system.test()

@@ -4,6 +4,7 @@ import dialogue_system.dialogue_config as config
 import dialogue_system.constants as const
 import numpy as np
 import copy
+import pickle
 
 
 class StateTracker:
@@ -179,7 +180,7 @@ class StateTracker:
                 agent_action[const.INFORM_SLOTS][self.match_key] = const.NO_MATCH
             self.current_informs[self.match_key] = agent_action[const.INFORM_SLOTS][self.match_key]
         agent_action.update({const.ROUND: self.round_num, const.SPEAKER_TYPE: const.AGT_SPEAKER_VAL})
-        print(f'Agent Action: {agent_action}\n')
+        # print(f'Agent Action: {agent_action}\n')
         self.history.append(agent_action)
 
     def update_state_user(self, user_action):
@@ -198,6 +199,6 @@ class StateTracker:
         for key, value in user_action[const.INFORM_SLOTS].items():
             self.current_informs[key] = value
         user_action.update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
-        print(f'User Action: {user_action}')
+        # print(f'User Action: {user_action}')
         self.history.append(user_action)
         self.round_num += 1
