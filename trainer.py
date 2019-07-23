@@ -1,9 +1,10 @@
 import argparse
 import json
-from dialogue_system import DialogueSystem
-from recorder import Recorder
 import os
 import random
+import collections
+from dialogue_system import DialogueSystem
+from recorder import Recorder
 
 
 class Trainer:
@@ -12,7 +13,6 @@ class Trainer:
 
         # Load run params
         run_dict = params['run']
-        self.use_simulator = run_dict['usersim']
 
         self.warmup_mem = run_dict['warmup_mem']
         self.num_ep_run = run_dict['num_ep_run']
@@ -29,13 +29,12 @@ class Trainer:
         self.dialogue_system = DialogueSystem(params)
         self.recorder = Recorder(params)
 
-        self.performance_metrics = {}
-        self.performance_metrics['train'] = {}
+        self.performance_metrics = collections.defaultdict(dict)
         self.performance_metrics['train']['success_rate'] = {}
         self.performance_metrics['train']['avg_reward'] = {}
         self.performance_metrics['train']['avg_round'] = {}
 
-    def run_warmup(self):
+    def __run_warmup(self):
         """
         Runs the warmup stage of training which is used to fill the agents memory.
 
@@ -60,7 +59,7 @@ class Trainer:
 
         print('...Warmup Ended')
 
-    def run_train(self):
+    def __run_train(self):
         """
         Runs the loop that trains the agent.
 
@@ -70,10 +69,9 @@ class Trainer:
 
         print('Training Started...')
         episode = 0
-        period_reward_total = 0
-        period_success_total = 0
-        period_round_total = 0
-        success_rate_best = 0.0
+        period_metrics = {'reward': 0, 'success': 0, 'round': 0}
+        best_success_rate = 0.0
+
         while episode < self.num_ep_run:
             self.dialogue_system.reset()
             episode += 1
@@ -90,35 +88,36 @@ class Trainer:
 
             while not done:
                 _, reward, done, success = self.dialogue_system.run_round(use_rule=use_rule)
-                period_reward_total += reward
+                period_metrics['reward'] += reward
                 rounds += 1
 
-            period_success_total += success
-            period_round_total += rounds
+            period_metrics['success'] += success
+            period_metrics['round'] += rounds
 
             # Train
             if episode % self.train_freq == 0:
+
                 # evaluate metrics
-                self.performance_metrics['train']['success_rate'][episode] = period_success_total / self.train_freq
-                self.performance_metrics['train']['avg_reward'][episode] = period_reward_total / self.train_freq
-                self.performance_metrics['train']['avg_round'][episode] = period_round_total / self.train_freq
+                self.performance_metrics['train']['success_rate'][episode] = period_metrics['success'] / self.train_freq
+                self.performance_metrics['train']['avg_reward'][episode] = period_metrics['reward'] / self.train_freq
+                self.performance_metrics['train']['avg_round'][episode] = period_metrics['round'] / self.train_freq
 
                 # Check success rate
-                success_rate = period_success_total / self.train_freq
-                avg_reward = period_reward_total / self.train_freq
+                success_rate = period_metrics['success'] / self.train_freq
+                avg_reward = period_metrics['reward'] / self.train_freq
 
                 # Flush
-                if success_rate >= success_rate_best and success_rate >= self.success_rate_threshold:
+                if success_rate >= best_success_rate and success_rate >= self.success_rate_threshold:
                     self.dialogue_system.dqn_agent.empty_memory()
 
                 # Update current best success rate
-                if success_rate > success_rate_best:
+                if success_rate > best_success_rate:
                     print(f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
-                    success_rate_best = success_rate
+                    best_success_rate = success_rate
                     self.dialogue_system.dqn_agent.save_weights(episode)
-                period_success_total = 0
-                period_reward_total = 0
-                period_round_total = 0
+                period_metrics['success'] = 0
+                period_metrics['reward'] = 0
+                period_metrics['round'] = 0
 
                 # Copy
                 self.dialogue_system.dqn_agent.copy()
@@ -133,8 +132,8 @@ class Trainer:
         self.save_performance_records()
 
     def train(self):
-        self.run_warmup()
-        self.run_train()
+        self.__run_warmup()
+        self.__run_train()
 
     def save_performance_records(self):
         """Save performance numbers."""
@@ -144,32 +143,3 @@ class Trainer:
         except Exception as e:
             print(f'Error: Writing model fails: {self.path}')
             print(e)
-
-
-# # Load params json into dict
-# ROOT = 'params/'
-# CHECKPOINTS = 'checkpoints/'
-# PARAMS_FILE_PATH = []
-
-# for file in os.listdir(ROOT):
-#     if file == 'params_agt_boltz_4.json' or file == 'params_const.json':
-#         if not os.path.exists(os.path.join(CHECKPOINTS, file.replace('params', 'performance'))):
-#             PARAMS_FILE_PATH.append(os.path.join(ROOT, file))
-
-# print(PARAMS_FILE_PATH)
-# for run in range(10):
-#     for path in PARAMS_FILE_PATH:
-#         print(path)
-#         params = {}
-#         with open(path) as f:
-#             params = json.load(f)
-
-#         if not os.path.exists(params['agent']['save_weights_file_path'].replace('.h5', f'/{run}')):
-#             os.makedirs(params['agent']['save_weights_file_path'].replace('.h5', f'/{run}'))
-#         params['agent']['performance_path'] = params['agent']['performance_path'].replace('.json', f'_run{run}.json')
-#         params['agent']['save_weights_file_path'] = params['agent']['save_weights_file_path'].replace('.h5', f'/{run}.h5')
-
-#         if not os.path.exists(params['agent']['performance_path']):
-#             dialogue_system = DialogueSystem(params)
-
-#             dialogue_system.train()
