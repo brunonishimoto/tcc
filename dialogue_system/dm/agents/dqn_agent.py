@@ -29,7 +29,6 @@ class DQNAgent:
         """
 
         self.C = params['agent']
-        self.name = self.C['name']
         self.memory = []
         self.memory_index = 0
         self.max_memory_size = self.C['max_mem_size']
@@ -39,7 +38,6 @@ class DQNAgent:
         self.gamma = self.C['gamma']
         self.batch_size = self.C['batch_size']
         self.hidden_size = self.C['dqn_hidden_size']
-        self.num_steps = 0
 
         self.load_weights_file_path = self.C['load_weights_file_path']
         self.save_weights_file_path = self.C['save_weights_file_path']
@@ -61,7 +59,7 @@ class DQNAgent:
         self.beh_model = self._build_model()
         self.tar_model = self._build_model()
 
-        self._load_weights(10)
+        self._load_weights(self.load_weights_file_path)
 
         self.reset()
 
@@ -259,7 +257,8 @@ class DQNAgent:
             beh_state_preds = self._dqn_predict(states)  # For leveling error
             if not self.vanilla:
                 beh_next_states_preds = self._dqn_predict(next_states)  # For indexing for DDQN
-            tar_next_state_preds = self._dqn_predict(next_states, target=True)  # For target value for DQN (& DDQN)
+            else:
+                tar_next_state_preds = self._dqn_predict(next_states, target=True)  # For target value for DQN (& DDQN)
 
             inputs = np.zeros((self.batch_size, self.state_size))
             targets = np.zeros((self.batch_size, self.num_actions))
@@ -281,22 +280,22 @@ class DQNAgent:
 
         self.tar_model.set_weights(self.beh_model.get_weights())
 
-    def save_weights(self, episode):
+    def save_weights(self):
         """Saves the weights of both models in two h5 files."""
 
         if not self.save_weights_file_path:
             return
-        beh_save_file_path = re.sub(r'\.h5', rf'/ep{episode}_beh.h5', self.save_weights_file_path)
+        beh_save_file_path = re.sub(r'\.h5', rf'_beh.h5', self.save_weights_file_path)
         self.beh_model.save_weights(beh_save_file_path)
-        tar_save_file_path = re.sub(r'\.h5', rf'/ep{episode}_tar.h5', self.save_weights_file_path)
+        tar_save_file_path = re.sub(r'\.h5', rf'_tar.h5', self.save_weights_file_path)
         self.tar_model.save_weights(tar_save_file_path)
 
-    def _load_weights(self, epsiode):
+    def _load_weights(self):
         """Loads the weights of both models from two h5 files."""
 
         if not self.load_weights_file_path:
             return
-        beh_load_file_path = re.sub(r'\.h5', r'/ep{episode}_beh.h5', self.load_weights_file_path)
+        beh_load_file_path = re.sub(r'\.h5', r'_beh.h5', self.load_weights_file_path)
         self.beh_model.load_weights(beh_load_file_path)
-        tar_load_file_path = re.sub(r'\.h5', r'/ep{episode}_tar.h5', self.load_weights_file_path)
+        tar_load_file_path = re.sub(r'\.h5', r'_tar.h5', self.load_weights_file_path)
         self.tar_model.load_weights(tar_load_file_path)
