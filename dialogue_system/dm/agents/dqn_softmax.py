@@ -1,13 +1,6 @@
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import Adam
 from dialogue_system.dm.agents.dqn_agent import DQNAgent
-import dialogue_system.constants as const
-import dialogue_system.dialogue_config as config
 import random
-import copy
 import numpy as np
-import re
 
 
 # Some of the code based off of https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
@@ -17,7 +10,7 @@ import re
 class DQNSoftmax(DQNAgent):
     """The DQN agent that interacts with the user."""
 
-    def __init__(self, state_size, params):
+    def __init__(self, params):
         """
         The constructor of DQNAgent.
 
@@ -29,13 +22,13 @@ class DQNSoftmax(DQNAgent):
 
         """
 
-        super().__init__(self, state_size, params)
+        super().__init__(params)
         self.tau_init = self.C['tau_init']
         self.tau_stop = self.C['tau_stop']
         self.tau_decay = self.C['tau_decay']
         self.tau = self.tau_init
 
-    def get_action(self, state, use_rule=False, train=True):
+    def get_action(self, state, episode=None, use_rule=False, train=True):
         """
         Returns the action of the agent given a state.
 
@@ -54,15 +47,15 @@ class DQNSoftmax(DQNAgent):
         """
 
         if train:
+
             if use_rule:
                 return self._rule_action()
             else:
 
-                self.num_steps += 1
-
+                # Linear decay
                 a = -float(self.tau_init - self.tau_stop) / self.tau_decay
                 b = float(self.tau_init)
-                self.tau = max(self.tau_stop, a * float(self.num_steps) + b)
+                self.tau = max(self.tau_stop, a * float(episode) + b)
 
                 # Softmax
 

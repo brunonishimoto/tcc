@@ -15,14 +15,11 @@ class Tester:
         self.num_ep_test = run_dict['num_ep_test']
 
         self.performance_metrics = collections.defaultdict(dict)
-        self.performance_metrics['test']['success_rate'] = {}
-        self.performance_metrics['test']['avg_reward'] = {}
-        self.performance_metrics['test']['avg_round'] = {}
 
         self.dialogue_system = DialogueSystem(params)
         self.recorder = Recorder(params)
 
-    def test(self, train_episode=0):
+    def run(self):
         """
         Runs the loop that tests the agent.
 
@@ -38,34 +35,31 @@ class Tester:
         period_metrics['round'] = 0
 
         while episode < self.num_ep_test:
-            self.dialogue_system.reset(train=False, test_episode=episode)
-
-            episode += 1
-            ep_reward = 0
+            self.dialogue_system.reset(episode, train=False)
             done = False
 
-            # Get initial state from state tracker
-            state = self.dialogue_system.state_tracker.get_state()
             success = False
             rounds = 0
             while not done:
-                next_state, reward, done, success = self.dialogue_system.run_round(state, train=False)
-                ep_reward += reward
-                state = next_state
+                _, reward, done, success = self.dialogue_system.run_round(use_rule=False, train=False)
+                period_metrics['reward'] += reward
                 rounds += 1
 
             period_metrics['success'] += success
             period_metrics['round'] += rounds
-            period_metrics['reward'] += ep_reward
+
+            episode += 1
 
             # print(f'Episode: {episode} Success: {success} Reward: {ep_reward}')
 
-        self.performance_metrics['test']['success_rate'][train_episode] = period_metrics['success'] / self.num_ep_test
-        self.performance_metrics['test']['avg_reward'][train_episode] = period_metrics['reward'] / self.num_ep_test
-        self.performance_metrics['test']['avg_round'][train_episode] = period_metrics['round'] / self.num_ep_test
+        self.performance_metrics['test']['success_rate'] = period_metrics['success'] / self.num_ep_test
+        self.performance_metrics['test']['avg_reward'] = period_metrics['reward'] / self.num_ep_test
+        self.performance_metrics['test']['avg_round'] = period_metrics['round'] / self.num_ep_test
+
         print('...Testing Ended')
         self.save_performance_records()
 
+    # TODO: remove this function, nad use the Recorder class or a util function
     def save_performance_records(self):
         """Save performance numbers."""
         try:

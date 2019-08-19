@@ -1,8 +1,9 @@
-import dialogue_system.dialogue_config as config
+import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
 import random
 import copy
 import pickle
+import math
 
 from dialogue_system.utils.util import remove_empty_slots
 
@@ -10,36 +11,40 @@ from dialogue_system.utils.util import remove_empty_slots
 class RuleBasedUserSimulator:
     """Simulates a real user, to train the agent with reinforcement learning."""
 
-    def __init__(self, params):
+    def __init__(self, config):
         """
         The constructor for UserSimulator. Sets dialogue config variables.
 
         Parameters:
-            params (dict): Dict of params loaded from file
+            config (dict): Dict of config loaded from file
             database (dict): The database in the format dict(long: dict)
         """
 
         # Load goal File
-        goals_path = params['db_file_paths']['user_goals']
+        goals_path = config['db_file_paths']['user_goals']
         self.goal_list = pickle.load(open(goals_path, 'rb'), encoding='latin1')
 
         # Load movie DB
         # Note: If you get an unpickling error here then run 'pickle_converter.py' and it should fix it
-        database_path = params['db_file_paths']['database']
+        database_path = config['db_file_paths']['database']
         self.database = pickle.load(open(database_path, 'rb'), encoding='latin1')
 
         # Clean DB
         remove_empty_slots(self.database)
 
-        self.train_list = self.goal_list[:90]  # TODO: Make the split rate as a parameter
-        self.test_list = self.goal_list[90:]
-        self.max_round = params['run']['max_round_num']
-        self.default_key = config.usersim_default_key
-        # A list of REQUIRED to be in the first action inform keys
-        self.init_informs = config.usersim_required_init_inform_keys
-        self.no_query = config.no_query_keys
+        # Compute the split point of the goal list
+        split = math.ceil(config['run']['split_ratio'] * len(self.goal_list))
+        self.train_list = self.goal_list[:split]
+        self.test_list = self.goal_list[split:]
 
-    def reset(self, train=True, test_episode=None):
+        self.max_round = config['run']['max_round_num']
+        self.default_key = cfg.usersim_default_key
+
+        # A list of REQUIRED to be in the first action inform keys
+        self.init_informs = cfg.usersim_required_init_inform_keys
+        self.no_query = cfg.no_query_keys
+
+    def reset(self, episode, train=True):
         """
         Resets the user sim. by emptying the state and returning the initial action.
 
@@ -48,7 +53,7 @@ class RuleBasedUserSimulator:
         """
 
         # Sample a random goal
-        self.goal = self._sample_goal(train, test_episode)
+        self.goal = self.__sample_goal(episode, train)
         # Add default slot to requests of goal
         self.goal[const.REQUEST_SLOTS][self.default_key] = const.UNKNOWN
 
@@ -71,18 +76,19 @@ class RuleBasedUserSimulator:
         self.episode_over = False
         self.dialogue_status = const.NO_OUTCOME_YET
 
-        return self._return_init_action()
+        return self.__return_init_action()
 
-    def _sample_goal(self, train=True, test_episode=None):
+    def __sample_goal(self, episode=None, train=True):
         if train:
-            sample_goal = random.choice(self.train_list)
+            sample_goal = self.train_list[episode % len(self.train_list)]
+            # sample_goal = random.choice(self.train_list)
         else:
-            # sample_goal = self.test_list[test_episode % 28]
-            sample_goal = random.choice(self.test_list)
+            sample_goal = self.test_list[episode % len(self.test_list)]
+            # sample_goal = random.choice(self.test_list)
         # print(f'-------------------------------------------------------\nUser Goal: {sample_goal}\n')
         return sample_goal
 
-    def _return_init_action(self):
+    def __return_init_action(self):
         """
         Returns the initial action of the episode.
 
@@ -166,13 +172,13 @@ class RuleBasedUserSimulator:
         else:
             agent_intent = agent_action[const.INTENT]
             if agent_intent == const.REQUEST:
-                self._response_to_request(agent_action)
+                self.__response_to_request(agent_action)
             elif agent_intent == const.INFORM:
-                self._response_to_inform(agent_action)
+                self.__response_to_inform(agent_action)
             elif agent_intent == const.MATCH_FOUND:
-                self._response_to_match_found(agent_action)
+                self.__response_to_match_found(agent_action)
             elif agent_intent == const.DONE:
-                success = self._response_to_done()
+                success = self.__response_to_done()
                 self.state[const.INTENT] = const.DONE
                 self.state[const.REQUEST_SLOTS].clear()
                 done = True
@@ -210,11 +216,11 @@ class RuleBasedUserSimulator:
         user_response[const.REQUEST_SLOTS] = copy.deepcopy(self.state[const.REQUEST_SLOTS])
         user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
-        reward = self._reward_function(success)
+        reward = self.__reward_function(success)
 
         return user_response, reward, done, True if success is 1 else False
 
-    def _response_to_request(self, agent_action):
+    def __response_to_request(self, agent_action):
         """
         Augments the state in response to the agent action having an intent of request.
 
@@ -296,7 +302,7 @@ class RuleBasedUserSimulator:
 
                     self.state[const.INTENT] = const.REQUEST
 
-    def _response_to_inform(self, agent_action):
+    def __response_to_inform(self, agent_action):
         """
         Augments the state in response to the agent action having an intent of inform.
 
@@ -387,7 +393,7 @@ class RuleBasedUserSimulator:
             else:
                 self.state[const.INTENT] = const.THANKS
 
-    def _response_to_match_found(self, agent_action):
+    def __response_to_match_found(self, agent_action):
         """
         Augments the state in response to the agent action having an intent of match_found.
 
@@ -427,7 +433,7 @@ class RuleBasedUserSimulator:
             self.state[const.REQUEST_SLOTS].clear()
             self.state[const.INFORM_SLOTS].clear()
 
-    def _response_to_done(self):
+    def __response_to_done(self):
         """
         Augments the state in response to the agent action having an intent of done.
 
@@ -462,7 +468,7 @@ class RuleBasedUserSimulator:
 
         return const.SUCCESS_DIALOG
 
-    def _reward_function(self, success):
+    def __reward_function(self, success):
         """
         Return the reward given the success.
 

@@ -9,10 +9,10 @@ from recorder import Recorder
 
 class Trainer:
 
-    def __init__(self, params):
+    def __init__(self, config):
 
-        # Load run params
-        run_dict = params['run']
+        # Load run config
+        run_dict = config['run']
 
         self.warmup_mem = run_dict['warmup_mem']
         self.num_ep_run = run_dict['num_ep_run']
@@ -22,12 +22,12 @@ class Trainer:
         self.success_rate_threshold = run_dict['success_rate_threshold']
 
         # sigma parameter for using designer's knowledge
-        self.sigma_init = params['agent']['sigma_init']
-        self.sigma_stop = params['agent']['sigma_stop']
-        self.sigma_decay = params['agent']['sigma_decay']
+        self.sigma_init = run_dict['sigma_init']
+        self.sigma_stop = run_dict['sigma_stop']
+        self.sigma_decay = run_dict['sigma_decay']
 
-        self.dialogue_system = DialogueSystem(params)
-        self.recorder = Recorder(params)
+        self.dialogue_system = DialogueSystem(config)
+        self.recorder = Recorder(config)
 
         self.performance_metrics = collections.defaultdict(dict)
         self.performance_metrics['train']['success_rate'] = {}
@@ -45,17 +45,18 @@ class Trainer:
         # TODO: change print with logger
         print('Warmup Started...')
         total_step = 0
-        while total_step != self.warmup_mem and not self.dialogue_system.dqn_agent.is_memory_full():
+        episode = 0
+        while total_step != self.warmup_mem and not self.dialogue_system.agent.is_memory_full():
             # Reset episode
-            self.dialogue_system.reset()
+            self.dialogue_system.reset(episode)
             done = False
 
-            # Get initial state from state tracker
-            state = self.dialogue_system.state_tracker.get_state()
             while not done:
                 next_state, _, done, _ = self.dialogue_system.run_round(use_rule=True)
                 total_step += 1
                 state = next_state
+
+            episode += 1
 
         print('...Warmup Ended')
 
@@ -73,26 +74,22 @@ class Trainer:
         best_success_rate = 0.0
 
         while episode < self.num_ep_run:
-            self.dialogue_system.reset()
-            episode += 1
+            self.dialogue_system.reset(episode)
             done = False
             rounds = 0
 
-            # use sigma for partial switch to agent
-            use_rule = False
-            a = -float(self.sigma_init - self.sigma_stop) / self.sigma_decay
-            b = float(self.sigma_init)
-            sigma = max(self.sigma_stop, a * float(episode) + b)
-            if sigma > random.random():
-                use_rule = True
-
             while not done:
-                _, reward, done, success = self.dialogue_system.run_round(use_rule=use_rule)
+                # Update sigma for a soft transition
+                sigma = self.__update_sigma(episode)
+                use_rule = True if random.random() <= sigma else False
+
+                _, reward, done, success = self.dialogue_system.run_round(episode=episode, use_rule=use_rule)
                 period_metrics['reward'] += reward
                 rounds += 1
 
             period_metrics['success'] += success
             period_metrics['round'] += rounds
+
 
             # Train
             if episode % self.train_freq == 0:
@@ -106,37 +103,51 @@ class Trainer:
                 success_rate = period_metrics['success'] / self.train_freq
                 avg_reward = period_metrics['reward'] / self.train_freq
 
+
                 # Flush
                 if success_rate >= best_success_rate and success_rate >= self.success_rate_threshold:
-                    self.dialogue_system.dqn_agent.empty_memory()
+                    self.dialogue_system.agent.empty_memory()
 
                 # Update current best success rate
                 if success_rate > best_success_rate:
                     print(f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
                     best_success_rate = success_rate
-                    self.dialogue_system.dqn_agent.save_weights(episode)
+                    self.dialogue_system.agent.save_weights()
+
                 period_metrics['success'] = 0
                 period_metrics['reward'] = 0
                 period_metrics['round'] = 0
 
                 # Copy
-                self.dialogue_system.dqn_agent.copy()
+                self.dialogue_system.agent.copy()
 
                 # Train
-                self.dialogue_system.dqn_agent.train()
+                self.dialogue_system.agent.train()
+
 
                 # Test on the actual weights
                 # self.test(episode)
 
+            episode += 1
+
         print('...Training Ended')
         self.save_performance_records()
 
-    def train(self):
+    def __update_sigma(self, episode):
+        # use sigma for partial switch to agent
+        a = -float(self.sigma_init - self.sigma_stop) / self.sigma_decay
+        b = float(self.sigma_init)
+        sigma = max(self.sigma_stop, a * float(episode) + b)
+        return sigma
+
+    def run(self):
         self.__run_warmup()
         self.__run_train()
 
+    # TODO: remove this function, nad use the Recorder class or a util function
     def save_performance_records(self):
         """Save performance numbers."""
+        self.path = 'teste.json'
         try:
             json.dump(self.performance_metrics, open(self.path, "w"), indent=2)
             print(f'saved model in {self.path}')

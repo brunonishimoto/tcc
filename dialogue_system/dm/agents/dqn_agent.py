@@ -1,8 +1,9 @@
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+import dialogue_system.dm.agents.models as models
 import dialogue_system.constants as const
-import dialogue_system.dialogue_config as config
+import dialogue_system.dialogue_config as cfg
 import random
 import copy
 import numpy as np
@@ -16,28 +17,24 @@ import re
 class DQNAgent:
     """The DQN agent that interacts with the user."""
 
-    def __init__(self, state_size, params):
+    def __init__(self, config):
         """
         The constructor of DQNAgent.
 
-        The constructor of DQNAgent which saves params, sets up neural network graphs, etc.
+        The constructor of DQNAgent which saves config, sets up neural network graphs, etc.
 
         Parameters:
             state_size (int): The state representation size or length of numpy array
-            params (dict): Loaded params in dict
+            config (dict): Loaded config in dict
 
         """
-
-        self.C = params['agent']
+        self.C = config['agent']
         self.memory = []
         self.memory_index = 0
         self.max_memory_size = self.C['max_mem_size']
         self.vanilla = self.C['vanilla']
-        self.lr = self.C['learning_rate']
-        self.lr_decay = self.C['lr_decay']
         self.gamma = self.C['gamma']
         self.batch_size = self.C['batch_size']
-        self.hidden_size = self.C['dqn_hidden_size']
 
         self.load_weights_file_path = self.C['load_weights_file_path']
         self.save_weights_file_path = self.C['save_weights_file_path']
@@ -45,32 +42,25 @@ class DQNAgent:
         if self.max_memory_size < self.batch_size:
             raise ValueError('Max memory size must be at least as great as batch size!')
 
-        self.state_size = state_size
-        self.possible_actions = config.agent_actions
+        self.possible_actions = cfg.agent_actions
         self.num_actions = len(self.possible_actions)
 
-        self.decay = self.C['decay']
-        self.agent = self.C['agent']
-        self.explore = self.C['explore']
         self.action_counts = np.ones(self.num_actions)
 
-        self.rule_request_set = config.rule_requests
-
-        self.beh_model = self._build_model()
-        self.tar_model = self._build_model()
-
-        self._load_weights(self.load_weights_file_path)
+        self.rule_request_set = cfg.rule_requests
 
         self.reset()
 
-    def _build_model(self):
-        """Builds and returns model/graph of neural network."""
+    def build_models(self, state_size):
+        self.state_size = state_size
+        self.C['model']['input_dim'] = state_size
+        self.C['model']['output_dim'] = self.num_actions
 
-        model = Sequential()
-        model.add(Dense(self.hidden_size, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(self.num_actions, activation='linear'))
-        model.compile(loss='mse', optimizer=Adam(lr=self.lr, decay=self.lr_decay))
-        return model
+        self.beh_model = models.load(self.C).build_model()
+        self.tar_model = models.load(self.C).build_model()
+
+        self.__load_weights()
+
 
     def reset(self):
         """Resets the rule-based variables."""
@@ -78,24 +68,7 @@ class DQNAgent:
         self.rule_phase = const.NOT_DONE
 
     def get_action(self, state, use_rule=False, train=True):
-        """
-        Returns the action of the agent given a state.
-
-        Gets the action of the agent given the current state. Either the rule-based policy or the neural networks are
-        used to respond.
-
-        Parameters:
-            state (numpy.array): The database with format dict(long: dict)
-            use_rule (bool): Indicates whether or not to use the rule-based policy, which depends on if this was called
-                             in warmup or training. Default: False
-
-        Returns:
-            int: The index of the action in the possible actions
-            dict: The action/response itself
-
-        """
-
-        # Implent in child classes
+        # Implemented in child classes
         pass
 
     def _rule_action(self):
@@ -242,7 +215,6 @@ class DQNAgent:
         them in the correct format for the neural network and calculates the Bellman equation for Q-Learning.
 
         """
-
         # Calc. num of batches to run
         num_batches = len(self.memory) // self.batch_size
         for b in range(num_batches):
@@ -290,12 +262,11 @@ class DQNAgent:
         tar_save_file_path = re.sub(r'\.h5', rf'_tar.h5', self.save_weights_file_path)
         self.tar_model.save_weights(tar_save_file_path)
 
-    def _load_weights(self):
+    def __load_weights(self):
         """Loads the weights of both models from two h5 files."""
 
-        if not self.load_weights_file_path:
-            return
-        beh_load_file_path = re.sub(r'\.h5', r'_beh.h5', self.load_weights_file_path)
-        self.beh_model.load_weights(beh_load_file_path)
-        tar_load_file_path = re.sub(r'\.h5', r'_tar.h5', self.load_weights_file_path)
-        self.tar_model.load_weights(tar_load_file_path)
+        if self.load_weights_file_path:
+            beh_load_file_path = re.sub(r'\.h5', r'_beh.h5', self.load_weights_file_path)
+            self.beh_model.load_weights(beh_load_file_path)
+            tar_load_file_path = re.sub(r'\.h5', r'_tar.h5', self.load_weights_file_path)
+            self.tar_model.load_weights(tar_load_file_path)

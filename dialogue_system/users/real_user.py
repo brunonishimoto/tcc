@@ -1,18 +1,18 @@
-import dialogue_system.dialogue_config as config
+import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
 
 
 class RealUser():
     """Connects a real user to the conversation through the console."""
 
-    def __init__(self, params):
+    def __init__(self, config):
         """
         The constructor for User.
 
         Parameters:
-            params (dict): Loaded params as dict
+            config (dict): Loaded config as dict
         """
-        self.max_round = params['run']['max_round_num']
+        self.max_round = config['run']['max_round_num']
 
     def reset(self):
         """
@@ -22,9 +22,9 @@ class RealUser():
             dict: The user response
         """
 
-        return self._return_response()
+        return self.__return_response()
 
-    def _return_response(self):
+    def __return_response(self):
         """
         Asks user in console for response then receives a response as input.
 
@@ -44,7 +44,7 @@ class RealUser():
             chunks = input_string.split('/')
 
             intent_correct = True
-            if chunks[0] not in config.usersim_intents:
+            if chunks[0] not in cfg.usersim_intents:
                 intent_correct = False
             response[const.INTENT] = chunks[0]
 
@@ -53,7 +53,7 @@ class RealUser():
                 informs_items_list = chunks[1].split(', ')
                 for inf in informs_items_list:
                     inf = inf.split(': ')
-                    if inf[0] not in config.all_slots:
+                    if inf[0] not in cfg.all_slots:
                         informs_correct = False
                         break
                     response[const.INFORM_SLOTS][inf[0]] = inf[1]
@@ -62,7 +62,7 @@ class RealUser():
             if len(chunks[2]) > 0:
                 requests_key_list = chunks[2].split(', ')
                 for req in requests_key_list:
-                    if req not in config.all_slots:
+                    if req not in cfg.all_slots:
                         requests_correct = False
                         break
                     response[const.REQUEST_SLOTS][req] = const.UNKNOWN
@@ -72,7 +72,7 @@ class RealUser():
 
         return response
 
-    def _return_success(self):
+    def __return_success(self):
         """
         Ask the user in console to input success (-1, 0 or 1) for (loss, neither loss nor win, win).
 
@@ -109,7 +109,7 @@ class RealUser():
             assert value != const.PLACEHOLDER
         # ---------------
 
-        print('Agent Action: {}'.format(agent_action))
+        print(f'Agent Action: {agent_action}')
 
         done = False
         user_response = {const.INTENT: '', const.REQUEST_SLOTS: {}, const.INFORM_SLOTS: {}}
@@ -119,8 +119,8 @@ class RealUser():
             success = const.FAILED_DIALOG
             user_response[const.INTENT] = const.DONE
         else:
-            user_response = self._return_response()
-            success = self._return_success()
+            user_response = self.__return_response()
+            success = self.__return_success()
 
         if success == const.FAILED_DIALOG or success == const.SUCCESS_DIALOG:
             done = True
@@ -128,11 +128,11 @@ class RealUser():
         assert const.UNKNOWN not in user_response[const.INFORM_SLOTS].values()
         assert const.PLACEHOLDER not in user_response[const.REQUEST_SLOTS].values()
 
-        reward = self._reward_function(success)
+        reward = self.__reward_function(success)
 
         return user_response, reward, done, True if success is 1 else False
 
-    def _reward_function(self, success):
+    def __reward_function(self, success):
         """
         Return the reward given the success.
 

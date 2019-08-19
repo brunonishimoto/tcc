@@ -1,6 +1,6 @@
 from dialogue_system.dm.dst.db_query import DBQuery
 from dialogue_system.utils.util import convert_list_to_dict, remove_empty_slots
-import dialogue_system.dialogue_config as config
+import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
 import numpy as np
 import copy
@@ -10,7 +10,7 @@ import pickle
 class StateTracker:
     """Tracks the state of the episode/conversation and prepares the state representation for the agent."""
 
-    def __init__(self, params):
+    def __init__(self, config):
         """
         The constructor of StateTracker.
 
@@ -18,25 +18,25 @@ class StateTracker:
         calls reset.
 
         Parameters:
-            params (dict): Loaded params in dict
+            config (dict): Loaded config in dict
 
         """
 
         # Load movie DB
         # Note: If you get an unpickling error here then run 'pickle_converter.py' and it should fix it
-        database_path = params['db_file_paths']['database']
+        database_path = config['db_file_paths']['database']
         database = pickle.load(open(database_path, 'rb'), encoding='latin1')
 
         # Clean DB
         remove_empty_slots(database)
 
         self.db_helper = DBQuery(database)
-        self.match_key = config.usersim_default_key
-        self.intents_dict = convert_list_to_dict(config.all_intents)
-        self.num_intents = len(config.all_intents)
-        self.slots_dict = convert_list_to_dict(config.all_slots)
-        self.num_slots = len(config.all_slots)
-        self.max_round_num = params['run']['max_round_num']
+        self.match_key = cfg.usersim_default_key
+        self.intents_dict = convert_list_to_dict(cfg.all_intents)
+        self.num_intents = len(cfg.all_intents)
+        self.slots_dict = convert_list_to_dict(cfg.all_slots)
+        self.num_slots = len(cfg.all_slots)
+        self.max_round_num = config['run']['max_round_num']
         self.none_state = np.zeros(self.get_state_size())
         self.reset()
 

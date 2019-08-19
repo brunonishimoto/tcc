@@ -1,0 +1,55 @@
+{
+  "runner": {
+    "name": "Trainer"
+  },
+  "user": {
+    "name": "RuleBasedUserSimulator"
+  },
+  "db_file_paths": {
+    "database": "data/movie_db.p",
+    "dict": "data/movie_dict.p",
+    "user_goals": "data/movie_user_goals.p"
+  },
+  "run": {
+    "warmup_mem": 1000,
+    "num_ep_run": 7000,
+    "num_ep_test": 200,
+    "train_freq": 100,
+    "max_round_num": 20,
+    "split_ratio": 0.7,
+    "sigma_init": 0,
+    "sigma_stop": 0,
+    "sigma_decay": 1,
+    "success_rate_threshold": 0.3
+  },
+  "dst": {
+    "name": "StateTracker"
+  },
+  "agent": {
+    "name": "DQNSoftmax",
+    "performance_path": "checkpoints1/performance_const.json",
+    "save_weights_file_path": "weights1/model_const.h5",
+    "load_weights_file_path": "",
+    "vanilla": true,
+    "batch_size": 16,
+    "tau_init": 1.0,
+    "tau_stop": 0.2,
+    "tau_decay": 5000,
+    "gamma": 0.9,
+    "max_mem_size": 50000,
+    "model": {
+      "name": "DQNModel",
+      "dqn_hidden_size": 80,
+      "activation": "relu",
+      "activation_out": "linear",
+      "loss": "mse",
+      "learning_rate": 1e-3,
+      "lr_decay": 0
+    }
+  },
+  "emc": {
+    "slot_error_mode": 0,
+    "slot_error_prob": 0.0,
+    "intent_error_prob": 0.0
+  }
+}
