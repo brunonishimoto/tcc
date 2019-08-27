@@ -17,9 +17,8 @@ def run(config_file='config.json'):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_path', dest='config_path', type=str, default='config.json')
+    parser.add_argument('--config_file', dest='config_file', type=str, default='config_eps.json')
     args = parser.parse_args()
     args = vars(args)
 
-    run(args['config_path'])
-
+    run(args['config_file'])

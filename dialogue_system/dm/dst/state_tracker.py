@@ -153,8 +153,8 @@ class StateTracker:
         any other necessary information.
 
         Parameters:
-            agent_action (dict): The agent action of format dict('intent': string, 'inform_slots': dict,
-                                 'request_slots': dict) and changed to dict('intent': '', 'inform_slots': {},
+            agent_action (dict): The agent action of format dict('intent': '', 'inform_slots': {},
+                                 'request_slots': {}) and changed to dict('intent': '', 'inform_slots': {},
                                  'request_slots': {}, 'round': int, 'speaker': 'Agent')
         """
 
@@ -180,7 +180,6 @@ class StateTracker:
                 agent_action[const.INFORM_SLOTS][self.match_key] = const.NO_MATCH
             self.current_informs[self.match_key] = agent_action[const.INFORM_SLOTS][self.match_key]
         agent_action.update({const.ROUND: self.round_num, const.SPEAKER_TYPE: const.AGT_SPEAKER_VAL})
-        # print(f'Agent Action: {agent_action}\n')
         self.history.append(agent_action)
 
     def update_state_user(self, user_action):
@@ -190,8 +189,8 @@ class StateTracker:
         Takes a user action and updates the history. Also augments the user_action param with necessary information.
 
         Parameters:
-            user_action (dict): The user action of format dict('intent': string, 'inform_slots': dict,
-                                 'request_slots': dict) and changed to dict('intent': '', 'inform_slots': {},
+            user_action (dict): The user action of format dict('intent': '', 'inform_slots': {},
+                                 'request_slots': {}) and changed to dict('intent': '', 'inform_slots': {},
                                  'request_slots': {}, 'round': int, 'speaker': 'User')
 
         """
@@ -199,6 +198,5 @@ class StateTracker:
         for key, value in user_action[const.INFORM_SLOTS].items():
             self.current_informs[key] = value
         user_action.update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
-        # print(f'User Action: {user_action}')
         self.history.append(user_action)
         self.round_num += 1

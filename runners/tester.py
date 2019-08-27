@@ -1,14 +1,17 @@
 import collections
 from dialogue_system import DialogueSystem
 from utils.util import save_json_file
-
+from setup_logger import runner_logger, dialogue_logger
 
 class Tester:
 
-    def __init__(self, params):
+    def __init__(self, config):
 
-        # Load run params
-        run_dict = params['run']
+        # Logging
+        runner_logger.info(f'Preparing for testing with configuration:\n{json.dumps(config, indent=2)}')
+
+        # Load run config
+        run_dict = config['run']
 
         self.num_ep_test = run_dict['num_ep_test']
 
@@ -16,7 +19,7 @@ class Tester:
 
         self.performance_metrics = collections.defaultdict(dict)
 
-        self.dialogue_system = DialogueSystem(params)
+        self.dialogue_system = DialogueSystem(config)
 
     def run(self):
         """
@@ -26,7 +29,9 @@ class Tester:
         Terminates when the episode reaches NUM_EP_TEST.
         """
 
-        print('Testing Started...')
+        runner_logger.info('Testing Started...')
+        dialogue_logger.info('Testing Started...')
+
         episode = 0
         period_metrics = {'reward': 0, 'success': 0, 'round': 0}
         period_metrics['reward'] = 0
@@ -55,5 +60,7 @@ class Tester:
         self.performance_metrics['test']['avg_reward'] = period_metrics['reward'] / self.num_ep_test
         self.performance_metrics['test']['avg_round'] = period_metrics['round'] / self.num_ep_test
 
-        print('...Testing Ended')
+        runner_logger.info('...Testing Ended')
+        dialogue_logger.info('...Testing Ended')
+
         save_json_file(self.performance_path, self.performance_metrics)

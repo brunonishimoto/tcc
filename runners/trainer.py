@@ -1,11 +1,18 @@
 import random
 import collections
+import logging
+import json
+
 from dialogue_system import DialogueSystem
 from utils.util import save_json_file
+from setup_logger import runner_logger, dialogue_logger
 
 class Trainer:
 
     def __init__(self, config):
+
+        # Logging
+        runner_logger.info(f'Preparing for training with configuration:\n{json.dumps(config, indent=2)}')
 
         # Load run config
         run_dict = config['run']
@@ -40,8 +47,9 @@ class Trainer:
         Loop terminates when the size of the memory is equal to WARMUP_MEM or when the memory buffer is full.
         """
 
-        # TODO: change print with logger
-        print('Warmup Started...')
+        runner_logger.info('Warmup started...')
+        dialogue_logger.info('Warmup started...')
+
         total_step = 0
         episode = 0
         while total_step != self.warmup_mem and not self.dialogue_system.agent.is_memory_full():
@@ -56,7 +64,8 @@ class Trainer:
 
             episode += 1
 
-        print('...Warmup Ended')
+        runner_logger.info('...Warmup Ended')
+        dialogue_logger.info('...Warmup Ended')
 
     def __run_train(self):
         """
@@ -66,7 +75,9 @@ class Trainer:
         every episode that TRAIN_FREQ is a multiple of. Terminates when the episode reaches NUM_EP_TRAIN.
         """
 
-        print('Training Started...')
+        runner_logger.info('Training Started...')
+        dialogue_logger.info('Training Started...')
+
         episode = 0
         period_metrics = {'reward': 0, 'success': 0, 'round': 0}
         best_success_rate = 0.0
@@ -108,7 +119,7 @@ class Trainer:
 
                 # Update current best success rate
                 if success_rate > best_success_rate:
-                    print(f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
+                    runner_logger.info(f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
                     best_success_rate = success_rate
                     self.dialogue_system.agent.save_weights()
 
@@ -128,7 +139,9 @@ class Trainer:
 
             episode += 1
 
-        print('...Training Ended')
+        runner_logger.info('...Training Ended')
+        dialogue_logger.info('...Training Ended')
+
         save_json_file(self.performance_path, self.performance_metrics)
 
     def __update_sigma(self, episode):
