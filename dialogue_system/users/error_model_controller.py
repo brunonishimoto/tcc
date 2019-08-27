@@ -60,6 +60,8 @@ class ErrorModelController:
         if random.random() < self.intent_error_prob:  # add noise for intent level
             frame[const.INTENT] = random.choice(self.intents)
 
+        return frame
+
     def __slot_value_noise(self, key, informs_dict):
         """
         Selects a new value for the slot given a key and the dict to change.

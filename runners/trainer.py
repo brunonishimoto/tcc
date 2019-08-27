@@ -1,11 +1,7 @@
-import argparse
-import json
-import os
 import random
 import collections
 from dialogue_system import DialogueSystem
-from recorder import Recorder
-
+from utils.util import save_json_file
 
 class Trainer:
 
@@ -26,8 +22,10 @@ class Trainer:
         self.sigma_stop = run_dict['sigma_stop']
         self.sigma_decay = run_dict['sigma_decay']
 
+        # path to save the performance
+        self.performance_path = run_dict['performance_path']
+
         self.dialogue_system = DialogueSystem(config)
-        self.recorder = Recorder(config)
 
         self.performance_metrics = collections.defaultdict(dict)
         self.performance_metrics['train']['success_rate'] = {}
@@ -131,7 +129,7 @@ class Trainer:
             episode += 1
 
         print('...Training Ended')
-        self.save_performance_records()
+        save_json_file(self.performance_path, self.performance_metrics)
 
     def __update_sigma(self, episode):
         # use sigma for partial switch to agent
@@ -143,14 +141,3 @@ class Trainer:
     def run(self):
         self.__run_warmup()
         self.__run_train()
-
-    # TODO: remove this function, nad use the Recorder class or a util function
-    def save_performance_records(self):
-        """Save performance numbers."""
-        self.path = 'teste.json'
-        try:
-            json.dump(self.performance_metrics, open(self.path, "w"), indent=2)
-            print(f'saved model in {self.path}')
-        except Exception as e:
-            print(f'Error: Writing model fails: {self.path}')
-            print(e)

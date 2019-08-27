@@ -4,8 +4,10 @@ import random
 import copy
 import pickle
 import math
+import dialogue_system.nlu as nlus
+import dialogue_system.nlg as nlgs
 
-from dialogue_system.utils.util import remove_empty_slots
+from utils.util import remove_empty_slots
 
 
 class RuleBasedUserSimulator:
@@ -43,6 +45,12 @@ class RuleBasedUserSimulator:
         # A list of REQUIRED to be in the first action inform keys
         self.init_informs = cfg.usersim_required_init_inform_keys
         self.no_query = cfg.no_query_keys
+
+        self.use_nl = config['use_nl']
+        if self.use_nl:
+            self.nlu = nlus.load(config)
+            self.nlg = nlgs.load(config)
+
 
     def reset(self, episode, train=True):
         """
@@ -129,6 +137,9 @@ class RuleBasedUserSimulator:
         user_response[const.REQUEST_SLOTS] = copy.deepcopy(self.state[const.REQUEST_SLOTS])
         user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
+        if self.use_nl:
+            user_response['nl'] = self.nlg.convert_diaact_to_nl(user_response, 'usr')
+
         return user_response
 
     def step(self, agent_action):
@@ -150,6 +161,9 @@ class RuleBasedUserSimulator:
 
         # Assertions -----
         # No UNK in agent action informs
+        if self.use_nl:
+            agent_action.update(self.nlu.generate_dia_act(agent_action['nl']))
+
         for value in agent_action[const.INFORM_SLOTS].values():
             assert value != const.UNKNOWN
             assert value != const.PLACEHOLDER
@@ -217,6 +231,9 @@ class RuleBasedUserSimulator:
         user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
         reward = self.__reward_function(success)
+
+        if self.use_nl:
+            user_response['nl'] = self.nlg.convert_diaact_to_nl(user_response, 'usr')
 
         return user_response, reward, done, True if success is 1 else False
 

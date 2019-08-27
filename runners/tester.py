@@ -1,8 +1,6 @@
-import argparse
-import json
 import collections
 from dialogue_system import DialogueSystem
-from recorder import Recorder
+from utils.util import save_json_file
 
 
 class Tester:
@@ -14,10 +12,11 @@ class Tester:
 
         self.num_ep_test = run_dict['num_ep_test']
 
+        self.performance_path = run_dict['performance_path']
+
         self.performance_metrics = collections.defaultdict(dict)
 
         self.dialogue_system = DialogueSystem(params)
-        self.recorder = Recorder(params)
 
     def run(self):
         """
@@ -57,15 +56,4 @@ class Tester:
         self.performance_metrics['test']['avg_round'] = period_metrics['round'] / self.num_ep_test
 
         print('...Testing Ended')
-        self.save_performance_records()
-
-    # TODO: remove this function, nad use the Recorder class or a util function
-    def save_performance_records(self):
-        """Save performance numbers."""
-        try:
-            json.dump(self.performance_metrics, open(self.path, "w"), indent=2)
-            print(f'saved model in {self.path}')
-        except Exception as e:
-            print(f'Error: Writing model fails: {self.path}')
-            print(e)
-
+        save_json_file(self.performance_path, self.performance_metrics)

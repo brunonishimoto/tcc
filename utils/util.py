@@ -1,3 +1,4 @@
+import json
 
 def convert_list_to_dict(lst):
     """
@@ -28,3 +29,12 @@ def remove_empty_slots(dic):
         for key in list(dic[id].keys()):
             if dic[id][key] == '':
                 dic[id].pop(key)
+
+def save_json_file(path, data):
+    """Save a json file."""
+    try:
+        json.dump(data, open(path, "w"), indent=2)
+        print(f'saved data in {path}')
+    except Exception as e:
+        print(f'Error: Writing model fails: {path}')
+        print(e)

@@ -1,4 +1,5 @@
 {
+  "use_nl": false,
   "runner": {
     "name": "Trainer"
   },
@@ -12,7 +13,7 @@
   },
   "run": {
     "warmup_mem": 1000,
-    "num_ep_run": 10000,
+    "num_ep_run": 1000,
     "num_ep_test": 200,
     "train_freq": 100,
     "max_round_num": 20,
@@ -20,15 +21,15 @@
     "sigma_init": 0,
     "sigma_stop": 0,
     "sigma_decay": 1,
-    "success_rate_threshold": 0.3
+    "success_rate_threshold": 0.3,
+    "performance_path": "checkpoints/performance_eps.json"
   },
   "dst": {
     "name": "StateTracker"
   },
   "agent": {
     "name": "DQNEpsilonDecay",
-    "performance_path": "checkpoints/performance_eps.json",
-    "save_weights_file_path": "weights/model_eps.h5",
+    "save_weights_file_path": "weights/dm/model_eps.h5",
     "load_weights_file_path": "",
     "vanilla": true,
     "batch_size": 16,
@@ -46,6 +47,16 @@
       "learning_rate": 1e-3,
       "lr_decay": 0
     }
+  },
+  "nlu": {
+    "name": "NLU",
+    "load_weights_file_path": "weights/nlu/lstm_[1468447442.91]_39_80_0.921.p"
+  },
+  "nlg": {
+    "name": "NLG",
+    "load_weights_file_path": "weights/nlg/lstm_tanh_relu_[1468202263.38]_2_0.610.p",
+    "load_predefined_file_path": "data/dia_act_nl_pairs.v6.json",
+    "beam_size": 10
   },
   "emc": {
     "slot_error_mode": 0,

@@ -1,5 +1,5 @@
 from dialogue_system.dm.dst.db_query import DBQuery
-from dialogue_system.utils.util import convert_list_to_dict, remove_empty_slots
+from utils.util import convert_list_to_dict, remove_empty_slots
 import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
 import numpy as np

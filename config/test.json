@@ -1,7 +1,7 @@
 {
   "use_nl": false,
   "runner": {
-    "name": "Trainer"
+    "name": "Tester"
   },
   "user": {
     "name": "RuleBasedUserSimulator"
@@ -22,14 +22,14 @@
     "sigma_stop": 0,
     "sigma_decay": 1,
     "success_rate_threshold": 0.3,
-    "performance_path": "checkpoints/performance_softmax.json"
+    "performance_path": "checkpoints/performance_test.json"
   },
   "dst": {
     "name": "StateTracker"
   },
   "agent": {
     "name": "DQNSoftmax",
-    "save_weights_file_path": "weights/dm/model_softmax.h5",
+    "save_weights_file_path": "weights/dm/model_test.h5",
     "load_weights_file_path": "",
     "vanilla": true,
     "batch_size": 16,
