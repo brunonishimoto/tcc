@@ -20,7 +20,9 @@ def setup_logger(logger_name, log_file, level=logging.DEBUG):
 
     return logger
 
-
 # Create loggers
-dialogue_logger = setup_logger('__dialogue__', 'logs/dialogue_logger.log')
-runner_logger = setup_logger('__runner__', 'logs/runner_logger.log')
+loggers = {
+    'dialogue': setup_logger('__dialogue__', 'logs/dialogue_logger.log'),
+    'runner': setup_logger('__runner__', 'logs/runner_logger.log'),
+    'debug': setup_logger('__debug__', 'logs/debug_logger.log')
+}

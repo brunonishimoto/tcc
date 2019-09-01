@@ -11,8 +11,7 @@ import dialogue_system.nlu as nlus
 import dialogue_system.nlg as nlgs
 
 from dialogue_system.users.error_model_controller import ErrorModelController
-from utils.util import remove_empty_slots
-from setup_logger import runner_logger, dialogue_logger
+from utils.util import remove_empty_slots, log
 
 
 class DialogueSystem:
@@ -35,13 +34,13 @@ class DialogueSystem:
         # 1) Agent takes action given state tracker's representation of dialogue (state)
         agent_action_index, agent_action = self.agent.get_action(self.state, episode=episode, use_rule=use_rule, train=train)
 
-        dialogue_logger.info(f'Agent: {agent_action}')
+        log(['dialogue'], f'Agent: {agent_action}')
 
         # 2) Update state tracker with the agent's action
         self.state_tracker.update_state_agent(agent_action)
         if self.use_nl:
             agent_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'agt')
-            dialogue_logger.info(f'Agent: {agent_action["nl"]}')
+            log(['dialogue'], f'Agent: {agent_action["nl"]}')
 
         # 3) User takes action given agent action
         user_action, reward, done, success = self.user.step(agent_action)
@@ -85,10 +84,10 @@ class DialogueSystem:
     # TODO: think in a better name for this function
     def __transform_action(self, action):
         if self.use_nl:
-            dialogue_logger.info(f'User: {action}')
+            log(['dialogue'], f'User: {action}')
             action.update(self.nlu.generate_dia_act(action['nl']))
-            dialogue_logger.info(f'User: {action["nl"]}')
+            log(['dialogue'], f'User: {action["nl"]}')
         else:
             action = self.emc.infuse_error(action)
-            dialogue_logger.info(f'User: {action}')
+            log(['dialogue'], f'User: {action}')
         return action

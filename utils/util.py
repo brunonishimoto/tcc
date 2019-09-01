@@ -1,4 +1,5 @@
 import json
+from setup_logger import loggers
 
 def convert_list_to_dict(lst):
     """
@@ -38,3 +39,7 @@ def save_json_file(path, data):
     except Exception as e:
         print(f'Error: Writing model fails: {path}')
         print(e)
+
+def log(names, msg):
+    for name in names:
+        loggers[name].info(msg)
