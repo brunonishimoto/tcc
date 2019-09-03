@@ -8,7 +8,7 @@
 # Usersim Config
 #######################################
 # Used in EMC for intent error (and in user)
-usersim_intents = ['inform', 'request', 'thanks', 'reject', 'done']
+usersim_intents = ['inform', 'request', 'thanks', 'deny', 'closing']
 
 # The goal of the agent is to inform a match for this key
 usersim_default_key = 'ticket'
@@ -31,7 +31,7 @@ agent_request_slots = ['moviename', 'theater', 'starttime', 'date', 'numberofpeo
 # Possible actions for agent
 agent_actions = [
     # {'intent': 'greeting', 'inform_slots': {}, 'request_slots': {}},
-    {'intent': 'done', 'inform_slots': {}, 'request_slots': {}},  # Triggers closing of conversation
+    {'intent': 'closing', 'inform_slots': {}, 'request_slots': {}},  # Triggers closing of conversation
     {'intent': 'match_found', 'inform_slots': {}, 'request_slots': {}},
     # {'intent': 'thanks', 'inform_slots': {}, 'request_slots': {}},
 ]
@@ -54,10 +54,10 @@ no_query_keys = ['numberofpeople', usersim_default_key]
 #######################################
 
 # All possible intents (for one-hot conversion in ST.get_state())
-all_intents = ['inform', 'request', 'done', 'match_found', 'thanks', 'reject']
+all_intents = ['inform', 'request', 'closing', 'match_found', 'thanks', 'deny']
 
 # All possible slots (for one-hot conversion in ST.get_state())
 all_slots = ['actor', 'actress', 'city', 'critic_rating', 'date', 'description', 'distanceconstraints',
-             'genre', 'greeting', 'implicit_value', 'movie_series', 'moviename', 'mpaa_rating',
+             'genre', 'greeting', 'implicit_value', 'movie_series', 'moviename', 'mpaa_rating', 'closing',
              'numberofpeople', 'numberofkids', 'other', 'price', 'seating', 'starttime', 'state',
              'theater', 'theater_chain', 'video_format', 'zip', 'result', usersim_default_key, 'mc_list']

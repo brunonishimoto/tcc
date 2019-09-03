@@ -62,6 +62,10 @@ class NLG:
         sentence = ""
         boolean_in = False
 
+        if dia_act[const.INTENT] == const.MATCH_FOUND:
+            dia_act[const.INTENT] = const.INFORM
+            dia_act[const.INFORM_SLOTS].update({const.TASK_COMPLETE_SLOT: dia_act[const.INFORM_SLOTS]['ticket']})
+
         # remove I do not care slot in task(complete)
         if dia_act[const.INTENT] == const.INFORM and const.TASK_COMPLETE_SLOT in dia_act[const.INFORM_SLOTS].keys() and dia_act[const.INFORM_SLOTS][const.TASK_COMPLETE_SLOT] != const.NO_MATCH:
             inform_slot_set = dia_act[const.INFORM_SLOTS].keys()

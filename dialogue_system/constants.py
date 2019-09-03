@@ -88,6 +88,8 @@ THANKS = "thanks"
 WELCOME = "welcome"
 # key for specifying reject dialogue act
 REJECT = "reject"
+# key for specifying deny dialogue act
+DENY = "deny"
 # key for specifying not sure dialogue act
 NOT_SURE = "not_sure"
 # key for specifying done dialogue act

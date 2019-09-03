@@ -1,5 +1,5 @@
 {
-  "use_nl": false,
+  "use_nl": true,
   "runner": {
     "name": "Trainer"
   },
@@ -13,14 +13,14 @@
   },
   "run": {
     "warmup_mem": 1000,
-    "num_ep_run": 7000,
+    "num_ep_run": 5000,
     "num_ep_test": 200,
     "train_freq": 100,
     "max_round_num": 20,
-    "split_ratio": 0.7,
-    "sigma_init": 0,
+    "split_ratio": 1,
+    "sigma_init": 0.5,
     "sigma_stop": 0,
-    "sigma_decay": 1,
+    "sigma_decay": 3000,
     "success_rate_threshold": 0.3,
     "performance_path": "checkpoints/performance_softmax.json"
   },
@@ -33,9 +33,9 @@
     "load_weights_file_path": "",
     "vanilla": true,
     "batch_size": 16,
-    "tau_init": 1.0,
-    "tau_stop": 0.2,
-    "tau_decay": 5000,
+    "tau_init": 2.0,
+    "tau_stop": 0.5,
+    "tau_decay": 4000,
     "gamma": 0.9,
     "max_mem_size": 50000,
     "model": {

@@ -7,7 +7,7 @@ import math
 import dialogue_system.nlu as nlus
 import dialogue_system.nlg as nlgs
 
-from utils.util import remove_empty_slots
+from utils.util import remove_empty_slots, log
 
 
 class RuleBasedUserSimulator:
@@ -93,7 +93,7 @@ class RuleBasedUserSimulator:
         else:
             sample_goal = self.test_list[episode % len(self.test_list)]
             # sample_goal = random.choice(self.test_list)
-        # print(f'-------------------------------------------------------\nUser Goal: {sample_goal}\n')
+        log(['dialogue'], f'\nUser Goal: {sample_goal}\n')
         return sample_goal
 
     def __return_init_action(self):
@@ -162,7 +162,13 @@ class RuleBasedUserSimulator:
         # Assertions -----
         # No UNK in agent action informs
         if self.use_nl:
+            if const.TASK_COMPLETE_SLOT in agent_action[const.INFORM_SLOTS]:
+                ticket = {self.default_key: agent_action[const.INFORM_SLOTS][self.default_key]}
             agent_action.update(self.nlu.generate_dia_act(agent_action['nl']))
+            if const.TASK_COMPLETE_SLOT in agent_action[const.INFORM_SLOTS]:
+                agent_action[const.INTENT] = const.MATCH_FOUND
+                agent_action[const.INFORM_SLOTS].pop(const.TASK_COMPLETE_SLOT, None)
+                agent_action[const.INFORM_SLOTS].update(ticket)
 
         for value in agent_action[const.INFORM_SLOTS].values():
             assert value != const.UNKNOWN
@@ -181,7 +187,7 @@ class RuleBasedUserSimulator:
         if self.max_round > 0 and agent_action[const.ROUND] == self.max_round:
             done = True
             success = const.FAILED_DIALOG
-            self.state[const.INTENT] = const.DONE
+            self.state[const.INTENT] = const.CLOSING
             self.state[const.REQUEST_SLOTS].clear()
         else:
             agent_intent = agent_action[const.INTENT]
@@ -191,9 +197,9 @@ class RuleBasedUserSimulator:
                 self.__response_to_inform(agent_action)
             elif agent_intent == const.MATCH_FOUND:
                 self.__response_to_match_found(agent_action)
-            elif agent_intent == const.DONE:
+            elif agent_intent == const.CLOSING:
                 success = self.__response_to_done()
-                self.state[const.INTENT] = const.DONE
+                self.state[const.INTENT] = const.CLOSING
                 self.state[const.REQUEST_SLOTS].clear()
                 done = True
 
@@ -222,7 +228,7 @@ class RuleBasedUserSimulator:
         # Anything in the rest should be in the goal
         for key in self.state[const.REST_SLOTS]:
             assert self.goal[const.INFORM_SLOTS].get(key, False) or self.goal[const.REQUEST_SLOTS].get(key, False)
-        assert self.state[const.INTENT] != ''
+        assert self.state[const.INTENT] != '', f'{agent_action}'
         # -----------------------
 
         user_response = {}
@@ -231,10 +237,11 @@ class RuleBasedUserSimulator:
         user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
         reward = self.__reward_function(success)
-
+        log(['debug'], f'{user_response}')
         if self.use_nl:
             user_response['nl'] = self.nlg.convert_diaact_to_nl(user_response, 'usr')
 
+        log(['debug'], f'{user_response}')
         return user_response, reward, done, True if success is 1 else False
 
     def __response_to_request(self, agent_action):
@@ -446,7 +453,7 @@ class RuleBasedUserSimulator:
                 break
 
         if self.constraint_check == const.FAILED_DIALOG:
-            self.state[const.INTENT] = const.REJECT
+            self.state[const.INTENT] = const.DENY
             self.state[const.REQUEST_SLOTS].clear()
             self.state[const.INFORM_SLOTS].clear()
 
