@@ -7,7 +7,7 @@ An Bidirectional LSTM Seq2Seq model
 '''
 
 from .seq_seq import SeqToSeq
-from .utils import *
+from ..utils import *
 
 
 class biLSTM(SeqToSeq):

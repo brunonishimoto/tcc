@@ -4,7 +4,7 @@ Created on Jun 13, 2016
 @author: xiul
 '''
 
-from .utils import *
+from ..utils import *
 import time, os
 
 

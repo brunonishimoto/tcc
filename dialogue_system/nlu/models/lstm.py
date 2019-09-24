@@ -7,7 +7,7 @@ An LSTM decoder - add tanh after cell before output gate
 '''
 
 from .seq_seq import SeqToSeq
-from .utils import *
+from ..utils import *
 
 
 class lstm(SeqToSeq):

@@ -1,6 +1,5 @@
 from .nlu import NLU
-from .bi_lstm import biLSTM
-from .lstm import lstm
+from .nlu_slot_gated import NLUSlotGated
 
 def load(config):
     cls_name = config["nlu"]["name"]

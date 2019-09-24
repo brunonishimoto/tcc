@@ -50,7 +50,12 @@
   },
   "nlu": {
     "name": "NLU",
-    "load_weights_file_path": "weights/nlu/lstm_[1468447442.91]_39_80_0.921.p"
+    "model_path": "weights/nlu/_step_9063_epochs_19_domain_movie.ckpt",
+    "vocab_path": "data/vocab",
+    "layer_size": 64,
+    "model_type": "full",
+    "batch_size": 16,
+    "max_epochs": 20
   },
   "nlg": {
     "name": "NLG",

@@ -9,9 +9,7 @@ import copy
 import numpy as np
 
 import dialogue_system.constants as const
-from .lstm import lstm
-from .bi_lstm import biLSTM
-
+from .models import lstm, biLSTM
 
 class NLU:
     def __init__(self, config):
@@ -40,6 +38,7 @@ class NLU:
 
             pred_words_indices = np.nanargmax(probs, axis=1)
             pred_tags = [self.inverse_tag_dict[index] for index in pred_words_indices]
+            print(pred_tags)
             diaact = self.parse_nlu_to_diaact(pred_tags, tmp_annot)
             return diaact
         else:
@@ -96,15 +95,17 @@ class NLU:
         tmp = 'BOS ' + string + ' EOS'
         words = tmp.lower().split(' ')
 
+        print(tmp)
+        print(words)
         diaact = {}
         diaact[const.INTENT] = const.INFORM
         diaact[const.REQUEST_SLOTS] = {}
         diaact[const.INFORM_SLOTS] = {}
 
         intent = nlu_vector[-1]
-        index = 1
         pre_tag = nlu_vector[0]
         pre_tag_index = 0
+        index = 1
 
         slot_val_dict = {}
 
