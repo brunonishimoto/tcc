@@ -239,8 +239,14 @@ class RuleBasedUserSimulator:
 
     def __response_confirm_answer(self, agent_action):
         """ Response for Confirm_Answer (System Action) """
+        log(['debug'], f'##########################')
+        log(['debug'], f'{self.state[const.REST_SLOTS]}')
         if len(self.state[const.REST_SLOTS]) > 0:
+            log(['debug'], f'##########################')
             request_slot = random.choice(list(self.state[const.REST_SLOTS].keys()))
+            log(['debug'], f'request_slot: {request_slot}')
+            log(['debug'], f'request_goal: {self.goal[const.REQUEST_SLOTS]}')
+            log(['debug'], f'inform_goal: {self.goal[const.INFORM_SLOTS]}')
             if request_slot in self.goal[const.REQUEST_SLOTS].keys():
                 self.state[const.INTENT] = const.REQUEST
                 self.state[const.REQUEST_SLOTS][request_slot] = const.UNKNOWN
