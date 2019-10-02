@@ -190,6 +190,8 @@ class RuleBasedUserSimulator:
                 self.__response_to_match_found(agent_action)
             elif agent_intent == const.CONFIRM_ANSWER:
                 self.__response_confirm_answer(agent_action)
+            elif agent_intent == const.CONFIRM_QUESTION:
+                self.__response_confirm_question(agent_action)
             elif agent_intent == const.DENY:
                 success = const.FAILED_DIALOG
                 self.state[const.INTENT] = const.THANKS
@@ -254,6 +256,16 @@ class RuleBasedUserSimulator:
         else:
             self.state[const.INTENT] = const.THANKS
 
+    def __response_to_confirm_question(self, agent_action):
+        """ Response for confirm question """
+        if len(agent_action[const.INFORM_SLOTS]) == 0:
+            self.state[const.INTENT] = const.CONFIRM_ANSWER
+        else:
+            if agent_action[const.INFORM_SLOTS].keys()[0] in self.goal[const.REQUEST_SLOTS]:
+                self.state[const.INTENT] = const.CONFIRM_ANSWER
+            else:
+                self.state[const.INTENT] = const.DENY
+ 
     def __response_to_request(self, agent_action):
         """
         Augments the state in response to the agent action having an intent of request.
