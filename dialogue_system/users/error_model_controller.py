@@ -3,6 +3,7 @@ import dialogue_system.constants as const
 import random
 import pickle
 
+from utils.util import log
 
 class ErrorModelController:
     """Adds error to the user action."""
@@ -41,6 +42,8 @@ class ErrorModelController:
 
         informs_dict = frame[const.INFORM_SLOTS]
         for key in list(frame[const.INFORM_SLOTS].keys()):
+            if key == cfg.usersim_default_key:
+                continue
             assert key in self.movie_dict
             if random.random() < self.slot_error_prob:
                 if self.slot_error_mode == 0:  # replace the slot_value only
