@@ -144,7 +144,6 @@ class NLU:
             diaact[const.INTENT] = arr[0]
             diaact[const.REQUEST_SLOTS] = {}
             for ele in arr[1:]:
-                #request_slots.append(ele)
                 diaact[const.REQUEST_SLOTS][ele] = 'UNK'
 
         diaact[const.INFORM_SLOTS] = slot_val_dict

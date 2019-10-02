@@ -92,7 +92,7 @@ class DQNAgent:
             rule_response = {const.INTENT: const.MATCH_FOUND, const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
             self.rule_phase = const.DONE
         elif self.rule_phase == const.DONE:
-            rule_response = {const.INTENT: const.CLOSING, const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
+            rule_response = {const.INTENT: const.THANKS, const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
         else:
             raise Exception('Should not have reached this clause')
 

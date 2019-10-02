@@ -46,12 +46,6 @@ class RuleBasedUserSimulator:
         self.init_informs = cfg.usersim_required_init_inform_keys
         self.no_query = cfg.no_query_keys
 
-        self.use_nl = config['use_nl']
-        if self.use_nl:
-            self.nlu = nlus.load(config)
-            self.nlg = nlgs.load(config)
-
-
     def reset(self, episode, train=True):
         """
         Resets the user sim. by emptying the state and returning the initial action.
@@ -137,9 +131,6 @@ class RuleBasedUserSimulator:
         user_response[const.REQUEST_SLOTS] = copy.deepcopy(self.state[const.REQUEST_SLOTS])
         user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
-        if self.use_nl:
-            user_response['nl'] = self.nlg.convert_diaact_to_nl(user_response, 'usr')
-
         return user_response
 
     def step(self, agent_action):
@@ -161,14 +152,12 @@ class RuleBasedUserSimulator:
 
         # Assertions -----
         # No UNK in agent action informs
-        if self.use_nl:
-            if const.TASK_COMPLETE_SLOT in agent_action[const.INFORM_SLOTS]:
-                ticket = {self.default_key: agent_action[const.INFORM_SLOTS][self.default_key]}
-            agent_action.update(self.nlu.generate_dia_act(agent_action['nl']))
-            if const.TASK_COMPLETE_SLOT in agent_action[const.INFORM_SLOTS]:
-                agent_action[const.INTENT] = const.MATCH_FOUND
-                agent_action[const.INFORM_SLOTS].pop(const.TASK_COMPLETE_SLOT, None)
-                agent_action[const.INFORM_SLOTS].update(ticket)
+        if const.TASK_COMPLETE_SLOT in agent_action[const.INFORM_SLOTS]:
+            ticket = {self.default_key: agent_action[const.INFORM_SLOTS][self.default_key]}
+        if const.TASK_COMPLETE_SLOT in agent_action[const.INFORM_SLOTS]:
+            agent_action[const.INTENT] = const.MATCH_FOUND
+            agent_action[const.INFORM_SLOTS].pop(const.TASK_COMPLETE_SLOT, None)
+            agent_action[const.INFORM_SLOTS].update(ticket)
 
         for value in agent_action[const.INFORM_SLOTS].values():
             assert value != const.UNKNOWN
@@ -193,13 +182,22 @@ class RuleBasedUserSimulator:
             agent_intent = agent_action[const.INTENT]
             if agent_intent == const.REQUEST:
                 self.__response_to_request(agent_action)
+            elif agent_intent == const.MULTIPLE_CHOICE:
+                self.__response_multiple_choice(agent_action)
             elif agent_intent == const.INFORM:
                 self.__response_to_inform(agent_action)
             elif agent_intent == const.MATCH_FOUND:
                 self.__response_to_match_found(agent_action)
-            elif agent_intent == const.CLOSING:
+            elif agent_intent == const.CONFIRM_ANSWER:
+                self.__response_confirm_answer(agent_action)
+            elif agent_intent == const.DENY:
+                success = const.FAILED_DIALOG
+                self.state[const.INTENT] = const.THANKS
+                self.state[const.REQUEST_SLOTS].clear()
+                done = True
+            elif agent_intent == const.THANKS:
                 success = self.__response_to_done()
-                self.state[const.INTENT] = const.CLOSING
+                self.state[const.INTENT] = const.THANKS
                 self.state[const.REQUEST_SLOTS].clear()
                 done = True
 
@@ -237,12 +235,24 @@ class RuleBasedUserSimulator:
         user_response[const.INFORM_SLOTS] = copy.deepcopy(self.state[const.INFORM_SLOTS])
 
         reward = self.__reward_function(success)
-        log(['debug'], f'{user_response}')
-        if self.use_nl:
-            user_response['nl'] = self.nlg.convert_diaact_to_nl(user_response, 'usr')
-
-        log(['debug'], f'{user_response}')
         return user_response, reward, done, True if success is 1 else False
+
+    def __response_confirm_answer(self, agent_action):
+        """ Response for Confirm_Answer (System Action) """
+        if len(self.state[const.REST_SLOTS]) > 0:
+            request_slot = random.choice(list(self.state[const.REST_SLOTS].keys()))
+            if request_slot in self.goal[const.REQUEST_SLOTS].keys():
+                self.state[const.INTENT] = const.REQUEST
+                self.state[const.REQUEST_SLOTS][request_slot] = const.UNKNOWN
+            elif request_slot in self.goal[const.INFORM_SLOTS].keys():
+                self.state[const.INTENT] = const.INFORM
+                self.state[const.INFORM_SLOTS][request_slot] = self.goal[const.INFORM_SLOTS][request_slot]
+                self.state[const.HISTORY_SLOTS][request_slot] = self.goal[const.INFORM_SLOTS][request_slot]
+                self.state[const.REQUEST_SLOTS].clear()
+                if request_slot in self.state[const.REST_SLOTS]:
+                    self.state[const.REST_SLOTS].pop(request_slot)
+        else:
+            self.state[const.INTENT] = const.THANKS
 
     def __response_to_request(self, agent_action):
         """
@@ -416,6 +426,19 @@ class RuleBasedUserSimulator:
                     self.state[const.REST_SLOTS][self.default_key] = const.UNKNOWN
             else:
                 self.state[const.INTENT] = const.THANKS
+
+    def __response_multiple_choice(self, agent_action):
+        """ Response for Multiple_Choice (Agent Action) """
+
+        slot = agent_action[const.INFORM_SLOTS].keys()[0]
+        if slot in self.goal[const.INFORM_SLOTS].keys():
+            self.state[const.INFORM_SLOTS][slot] = self.goal[const.INFORM_SLOTS][slot]
+        elif slot in self.goal[const.REQUEST_SLOTS].keys():
+            self.state[const.INFORM_SLOTS][slot] = random.choice(agent_action[const.INFORM_SLOTS][slot])
+
+        self.state[const.INTENT] = const.INFORM
+        if slot in self.state[const.REST_SLOTS]: self.state[const.REST_SLOTS].pop(slot)
+        if slot in self.state[const.REQUEST_SLOTS].keys(): del self.state[const.REQUEST_SLOTS][slot]
 
     def __response_to_match_found(self, agent_action):
         """

@@ -157,7 +157,7 @@ class StateTracker:
                                  'request_slots': {}) and changed to dict('intent': '', 'inform_slots': {},
                                  'request_slots': {}, 'round': int, 'speaker': 'Agent')
         """
-
+        log(['debug'], f'{agent_action}')
         if agent_action[const.INTENT] == const.INFORM:
             assert agent_action[const.INFORM_SLOTS]
             inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], self.current_informs)

@@ -40,14 +40,18 @@ class DialogueSystem:
         self.state_tracker.update_state_agent(agent_action)
         if self.use_nl:
             agent_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'agt')
-            log(['dialogue'], f'Agent: {agent_action["nl"]}')
+        agent_action = self.__transform_action(agent_action)
+        log(['dialogue'], f'Agent: {agent_action}')
 
         # 3) User takes action given agent action
         user_action, reward, done, success = self.user.step(agent_action)
 
         if not done:
             # 4) Infuse error into semantic frame level of user action
+            if self.use_nl:
+                user_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'usr')
             user_action = self.__transform_action(user_action)
+            log(['dialogue'], f'User: {user_action}')
 
         # 5) Update state tracker with user action
         self.state_tracker.update_state_user(user_action)
@@ -73,8 +77,11 @@ class DialogueSystem:
         self.state_tracker.reset()
         # Then pick an init user action
         user_action = self.user.reset(episode, train)
+        if self.use_nl:
+            user_action['nl'] = self.nlg.convert_diaact_to_nl(user_action, 'usr')
         # if nl transform in frame, if frame use emc
         user_action = self.__transform_action(user_action)
+        log(['dialogue'], f'User: {user_action}')
         # And update state tracker
         self.state_tracker.update_state_user(user_action)
         self.state = self.state_tracker.get_state()
@@ -84,10 +91,7 @@ class DialogueSystem:
     # TODO: think in a better name for this function
     def __transform_action(self, action):
         if self.use_nl:
-            log(['dialogue'], f'User: {action}')
             action.update(self.nlu.generate_dia_act(action['nl']))
-            log(['dialogue'], f'User: {action["nl"]}')
         else:
             action = self.emc.infuse_error(action)
-            log(['dialogue'], f'User: {action}')
         return action

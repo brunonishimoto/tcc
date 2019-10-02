@@ -49,7 +49,7 @@
     }
   },
   "nlu": {
-    "name": "NLU",
+    "name": "NLUSlotGated",
     "model_path": "weights/nlu/_step_9063_epochs_19_domain_movie.ckpt",
     "vocab_path": "data/vocab",
     "layer_size": 64,
