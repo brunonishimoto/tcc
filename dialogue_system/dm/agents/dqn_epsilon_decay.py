@@ -64,4 +64,4 @@ class DQNEpsilonDecay(DQNAgent):
                 else:
                     return self._dqn_action(state)
         else:
-            return self._dqn_action(state, train=False)
+            return self._dqn_action(state)

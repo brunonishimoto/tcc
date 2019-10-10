@@ -70,4 +70,4 @@ class DQNSoftmax(DQNAgent):
                 action = self._map_index_to_action(index)
                 return index, action
         else:
-            return self._dqn_action(state, train=False)
+            return self._dqn_action(state)

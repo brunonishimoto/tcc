@@ -28,6 +28,7 @@ class DialogueSystem:
         self.agent.build_models(self.state_tracker.get_state_size())
 
         self.use_nl = config['use_nl']
+        self.real_user = config['real_user']
         self.state = None
 
     def run_round(self, episode=None, use_rule=False, train=True):
@@ -48,7 +49,7 @@ class DialogueSystem:
 
         if not done:
             # 4) Infuse error into semantic frame level of user action
-            if self.use_nl:
+            if self.use_nl and not self.real_user:
                 user_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'usr')
             user_action = self.__transform_action(user_action)
             log(['dialogue'], f'User: {user_action}')
@@ -77,7 +78,7 @@ class DialogueSystem:
         self.state_tracker.reset()
         # Then pick an init user action
         user_action = self.user.reset(episode, train)
-        if self.use_nl:
+        if self.use_nl and not self.real_user:
             user_action['nl'] = self.nlg.convert_diaact_to_nl(user_action, 'usr')
         # if nl transform in frame, if frame use emc
         user_action = self.__transform_action(user_action)

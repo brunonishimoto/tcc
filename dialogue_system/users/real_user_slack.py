@@ -1,8 +1,13 @@
+from slackclient import SlackClient
+from utils.util import log
+
 import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
+import time
+import re
 
 
-class RealUser():
+class RealUserSlack():
     """Connects a real user to the conversation through the console."""
 
     def __init__(self, config):
@@ -14,7 +19,49 @@ class RealUser():
         """
         self.max_round = config['run']['max_round_num']
 
-    def reset(self):
+        # instantiate Slack client
+        self.slack_client = SlackClient('xoxb-628422054787-639344980276-6UHmHYpqsPcQsQoxqerVi4qJ')
+
+        # starterbot's user ID in Slack: value is assigned after the bot starts up
+        self.starterbot_id = None
+
+        # constants
+        self.RTM_READ_DELAY = 1 # 1 second delay between reading from RTM
+        self.MENTION_REGEX = "^<@(|[WU].+?)>(.*)"
+
+        if self.slack_client.rtm_connect(with_team_state=False):
+            log(['debug'], "Connected to the Slack!")
+            # Read bot's user ID by calling Web API method `auth.test`
+            self.starterbot_id = self.slack_client.api_call("auth.test")["user_id"]
+        else:
+            log(['debug'], "Connection failed")
+            exit()
+
+    def parse_events(self, slack_events):
+        """
+            Parses a list of events coming from the Slack RTM API to find bot commands.
+            If a bot command is found, this function returns a tuple of command and channel.
+            If its not found, then this function returns None, None.
+        """
+        for event in slack_events:
+            if event["type"] == "message" and not "subtype" in event:
+                user_id, message = self.parse_direct_mention(event["text"])
+                if user_id == self.starterbot_id:
+                    return message, event["channel"]
+                if event["channel"] == "DJTA4UUSY":
+                    return event["text"], event["channel"]
+        return None, None
+
+    def parse_direct_mention(self, message_text):
+        """
+            Finds a direct mention (a mention that is at the beginning) in message text
+            and returns the user ID which was mentioned. If there is no direct mention, returns None
+        """
+        matches = re.search(self.MENTION_REGEX, message_text)
+        # the first group contains the username, the second group contains the remaining mess
+        return (matches.group(1), matches.group(2).strip()) if matches else (None, None)
+
+    def reset(self, episode=0, train=True):
         """
         Reset the user.
 
@@ -27,50 +74,14 @@ class RealUser():
     def __return_response(self):
         """
         Asks user in console for response then receives a response as input.
-
-        Format must be like this: request/moviename: room, date: friday/starttime, city, theater
-        or inform/moviename: zootopia/
-        or request//starttime
-        or done//
-        intents, informs keys and values, and request keys and values cannot contain / , :
-
-        Returns:
-            dict: The response of the user
         """
+        command = None
+        while not command:
+            command, self.channel = self.parse_events(self.slack_client.rtm_read())
+            time.sleep(self.RTM_READ_DELAY)
 
-        response = {const.INTENT: '', const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
-        while True:
-            input_string = input('Response: ')
-            chunks = input_string.split('/')
 
-            intent_correct = True
-            if chunks[0] not in cfg.usersim_intents:
-                intent_correct = False
-            response[const.INTENT] = chunks[0]
-
-            informs_correct = True
-            if len(chunks[1]) > 0:
-                informs_items_list = chunks[1].split(', ')
-                for inf in informs_items_list:
-                    inf = inf.split(': ')
-                    if inf[0] not in cfg.all_slots:
-                        informs_correct = False
-                        break
-                    response[const.INFORM_SLOTS][inf[0]] = inf[1]
-
-            requests_correct = True
-            if len(chunks[2]) > 0:
-                requests_key_list = chunks[2].split(', ')
-                for req in requests_key_list:
-                    if req not in cfg.all_slots:
-                        requests_correct = False
-                        break
-                    response[const.REQUEST_SLOTS][req] = const.UNKNOWN
-
-            if intent_correct and informs_correct and requests_correct:
-                break
-
-        return response
+        return {'nl': command}
 
     def __return_success(self):
         """
@@ -82,7 +93,8 @@ class RealUser():
 
         success = -2
         while success not in (-1, 0, 1):
-            success = int(input('Success?: '))
+            command, self.channel = self.parse_events(self.slack_client.rtm_read())
+            success = int(command)
         return success
 
     def step(self, agent_action):
@@ -109,7 +121,14 @@ class RealUser():
             assert value != const.PLACEHOLDER
         # ---------------
 
-        print(f'Agent Action: {agent_action}')
+        log(['debug'], f'Agent Action: {agent_action}')
+
+        # Sends the response back to the channel
+        self.slack_client.api_call(
+            "chat.postMessage",
+            channel=self.channel,
+            text=agent_action['nl']
+        )
 
         done = False
         user_response = {const.INTENT: '', const.REQUEST_SLOTS: {}, const.INFORM_SLOTS: {}}
@@ -124,9 +143,6 @@ class RealUser():
 
         if success == const.FAILED_DIALOG or success == const.SUCCESS_DIALOG:
             done = True
-
-        assert const.UNKNOWN not in user_response[const.INFORM_SLOTS].values()
-        assert const.PLACEHOLDER not in user_response[const.REQUEST_SLOTS].values()
 
         reward = self.__reward_function(success)
 

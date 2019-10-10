@@ -1,5 +1,6 @@
-from .real_user import RealUser
+from .real_user_cmd import RealUserCMD
 from .rule_based_user_simulator import RuleBasedUserSimulator
+from .real_user_slack import RealUserSlack
 
 def load(config):
     cls_name = config["user"]["name"]
