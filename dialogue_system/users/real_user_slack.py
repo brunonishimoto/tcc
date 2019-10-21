@@ -80,7 +80,6 @@ class RealUserSlack():
             command, self.channel = self.parse_events(self.slack_client.rtm_read())
             time.sleep(self.RTM_READ_DELAY)
 
-
         return {'nl': command}
 
     def __return_success(self):
