@@ -182,14 +182,14 @@ class RuleBasedUserSimulator:
             agent_intent = agent_action[const.INTENT]
             if agent_intent == const.REQUEST:
                 self.__response_to_request(agent_action)
-            elif agent_intent == const.MULTIPLE_CHOICE:
-                self.__response_multiple_choice(agent_action)
+            # elif agent_intent == const.MULTIPLE_CHOICE:
+            #     self.__response_multiple_choice(agent_action)
             elif agent_intent == const.INFORM:
                 self.__response_to_inform(agent_action)
             elif agent_intent == const.MATCH_FOUND:
                 self.__response_to_match_found(agent_action)
-            elif agent_intent == const.CONFIRM_ANSWER:
-                self.__response_confirm_answer(agent_action)
+            # elif agent_intent == const.CONFIRM_ANSWER:
+            #     self.__response_confirm_answer(agent_action)
             elif agent_intent == const.DENY:
                 success = const.FAILED_DIALOG
                 self.state[const.INTENT] = const.THANKS

@@ -81,7 +81,7 @@ class StateTracker:
         user_action = self.history[-1]
         db_results_dict = self.db_helper.get_db_results_for_slots(self.current_informs)
         last_agent_action = self.history[-2] if len(self.history) > 1 else None
-        log(['debug'], f'{user_action}')
+
         # Create one-hot of intents to represent the current user action
         user_act_rep = np.zeros((self.num_intents,))
         user_act_rep[self.intents_dict[user_action[const.INTENT]]] = 1.0
@@ -157,7 +157,7 @@ class StateTracker:
                                  'request_slots': {}) and changed to dict('intent': '', 'inform_slots': {},
                                  'request_slots': {}, 'round': int, 'speaker': 'Agent')
         """
-        log(['debug'], f'{agent_action}')
+
         if agent_action[const.INTENT] == const.INFORM:
             assert agent_action[const.INFORM_SLOTS]
             inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], self.current_informs)

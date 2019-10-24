@@ -20,7 +20,7 @@ class RealUserSlack():
         self.max_round = config['run']['max_round_num']
 
         # instantiate Slack client
-        self.slack_client = SlackClient('xoxb-628422054787-639344980276-6UHmHYpqsPcQsQoxqerVi4qJ')
+        self.slack_client = SlackClient('################TOKEN###################')
 
         # starterbot's user ID in Slack: value is assigned after the bot starts up
         self.starterbot_id = None

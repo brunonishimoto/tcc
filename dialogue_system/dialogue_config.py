@@ -57,7 +57,7 @@ no_query_keys = ['numberofpeople', usersim_default_key]
 #######################################
 
 # All possible intents (for one-hot conversion in ST.get_state())
-all_intents = ['inform', 'request', 'closing', 'match_found', 'thanks', 'deny', 'confirm_answer']
+all_intents = ['inform', 'request', 'match_found', 'thanks', 'deny']
 
 # All possible slots (for one-hot conversion in ST.get_state())
 all_slots = ['actor', 'actress', 'city', 'critic_rating', 'date', 'description', 'distanceconstraints',
