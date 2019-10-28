@@ -39,29 +39,29 @@ class ErrorModelController:
             frame (dict): format dicconst.INTENTntent': '', 'inform_slots': {}, 'request_slots': {}, 'round': int,
                           'speaker': 'User')
         """
-
-        informs_dict = frame[const.INFORM_SLOTS]
-        for key in list(frame[const.INFORM_SLOTS].keys()):
-            if key == cfg.usersim_default_key:
-                continue
-            assert key in self.movie_dict
-            if random.random() < self.slot_error_prob:
-                if self.slot_error_mode == 0:  # replace the slot_value only
-                    self.__slot_value_noise(key, informs_dict)
-                elif self.slot_error_mode == 1:  # replace slot and its values
-                    self.__slot_noise(key, informs_dict)
-                elif self.slot_error_mode == 2:  # delete the slot
-                    self.__slot_remove(key, informs_dict)
-                else:  # Combine all three
-                    rand_choice = random.random()
-                    if rand_choice <= 0.33:
+        if self.slot_error_prob > 0:
+            informs_dict = frame[const.INFORM_SLOTS]
+            for key in list(frame[const.INFORM_SLOTS].keys()):
+                if key == cfg.usersim_default_key:
+                    continue
+                assert key in self.movie_dict
+                if random.random() < self.slot_error_prob:
+                    if self.slot_error_mode == 0:  # replace the slot_value only
                         self.__slot_value_noise(key, informs_dict)
-                    elif rand_choice > 0.33 and rand_choice <= 0.66:
+                    elif self.slot_error_mode == 1:  # replace slot and its values
                         self.__slot_noise(key, informs_dict)
-                    else:
+                    elif self.slot_error_mode == 2:  # delete the slot
                         self.__slot_remove(key, informs_dict)
-        if random.random() < self.intent_error_prob:  # add noise for intent level
-            frame[const.INTENT] = random.choice(self.intents)
+                    else:  # Combine all three
+                        rand_choice = random.random()
+                        if rand_choice <= 0.33:
+                            self.__slot_value_noise(key, informs_dict)
+                        elif rand_choice > 0.33 and rand_choice <= 0.66:
+                            self.__slot_noise(key, informs_dict)
+                        else:
+                            self.__slot_remove(key, informs_dict)
+            if random.random() < self.intent_error_prob:  # add noise for intent level
+                frame[const.INTENT] = random.choice(self.intents)
 
         return frame
 

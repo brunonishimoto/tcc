@@ -2,9 +2,12 @@ import random
 import collections
 import logging
 import json
+import re
+import copy
 
 from dialogue_system import DialogueSystem
 from utils.util import save_json_file, log
+from .tester import Tester
 
 class Trainer:
 
@@ -15,6 +18,12 @@ class Trainer:
 
         # Load run config
         run_dict = config['run']
+
+        # Config for the tester
+        self.tester_config = copy.deepcopy(config)
+        self.tester_config['agent']['load_weights_file_path'] = config['agent']['save_weights_file_path']
+        self.tester_config['agent']['save_weights_file_path'] = ''
+
 
         self.warmup_mem = run_dict['warmup_mem']
         self.num_ep_run = run_dict['num_ep_run']
@@ -29,7 +38,7 @@ class Trainer:
         self.sigma_decay = run_dict['sigma_decay']
 
         # path to save the performance
-        self.performance_path = run_dict['performance_path']
+        self.performance_path = re.sub(r'\.json', rf'_train.json', run_dict['performance_path'])
 
         self.dialogue_system = DialogueSystem(config)
 
@@ -61,6 +70,18 @@ class Trainer:
                 state = next_state
 
             episode += 1
+
+        # Copy
+        self.dialogue_system.agent.copy()
+
+        # Train
+        self.dialogue_system.agent.train()
+
+        # Save weights
+        self.dialogue_system.agent.save_weights()
+
+        # Test on the actual weights
+        Tester(self.tester_config).run()
 
         log(['dialogue', 'runner'], '...Warmup Ended')
 
@@ -107,7 +128,6 @@ class Trainer:
                 success_rate = period_metrics['success'] / self.train_freq
                 avg_reward = period_metrics['reward'] / self.train_freq
 
-
                 # Flush
                 if success_rate >= best_success_rate and success_rate >= self.success_rate_threshold:
                     self.dialogue_system.agent.empty_memory()
@@ -128,9 +148,11 @@ class Trainer:
                 # Train
                 self.dialogue_system.agent.train()
 
+                # Save partial metrics
+                save_json_file(self.performance_path, self.performance_metrics)
 
                 # Test on the actual weights
-                # self.test(episode)
+                Tester(self.tester_config).run()
 
             episode += 1
 

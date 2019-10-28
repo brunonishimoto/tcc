@@ -1,7 +1,13 @@
 import logging
+import absl.logging
 
 def setup_logger(logger_name, log_file, level=logging.DEBUG):
     """ Function to setup a logger """
+
+    # This is due to a bug that tensoflow "breaks" the native logging:
+    # See https://github.com/abseil/abseil-py/issues/99
+    logging.root.removeHandler(absl.logging._absl_handler)
+    absl.logging._warn_preinit_stderr = False
 
     formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
     logger = logging.getLogger(logger_name)

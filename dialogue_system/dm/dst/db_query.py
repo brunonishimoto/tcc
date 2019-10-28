@@ -22,7 +22,7 @@ class DBQuery:
         self.cached_db_slot = defaultdict(dict)
         self.cached_db = defaultdict(dict)
 
-    def fill_inform_slot(self, inform_slot_to_fill, current_inform_slots):
+    def fill_inform_slot(self, inform_slots_to_be_filled, current_slots):
         """
         Given the current informs/constraints fill the informs that need to be filled with values from the database.
 
@@ -30,35 +30,82 @@ class DBQuery:
         constraints of the current episode.
 
         Parameters:
-            inform_slot_to_fill (dict): Inform slots to fill with values
-            current_inform_slots (dict): Current inform slots with values from the StateTracker
+            inform_slots_to_be_filled (dict): Inform slots to fill with values
+            current_slots (dict): Current inform slots with values from the StateTracker
 
         Returns:
-            dict: inform_slot_to_fill filled with values
+            dict: inform_slots_to_be_filled filled with values
         """
 
         # For this simple system only one inform slot should ever passed in
-        assert len(inform_slot_to_fill) == 1
+        # assert len(inform_slots_to_be_filled) == 1
 
-        key = list(inform_slot_to_fill.keys())[0]
+        # key = list(inform_slots_to_be_filled.keys())[0]
 
-        # This removes the inform we want to fill from the current informs if it is present in the current informs
-        # so it can be re-queried
-        current_informs = copy.deepcopy(current_inform_slots)
-        current_informs.pop(key, None)
+        # # This removes the inform we want to fill from the current informs if it is present in the current informs
+        # # so it can be re-queried
+        # current_informs = copy.deepcopy(current_slots)
+        # current_informs.pop(key, None)
 
-        # db_results is a dict of dict in the same exact format as the db, it is just a subset of the db
-        db_results = self.get_db_results(current_informs)
+        # # db_results is a dict of dict in the same exact format as the db, it is just a subset of the db
+        # db_results = self.get_db_results(current_informs)
 
-        filled_inform = {}
-        values_dict = self._count_slot_values(key, db_results)
-        if values_dict:
-            # Get key with max value (ie slot value with highest count of available results)
-            filled_inform[key] = max(values_dict, key=values_dict.get)
-        else:
-            filled_inform[key] = const.NO_MATCH
+        # filled_inform = {}
+        # values_dict = self._count_slot_values(key, db_results)
+        # if values_dict:
+        #     # Get key with max value (ie slot value with highest count of available results)
+        #     filled_inform[key] = max(values_dict, key=values_dict.get)
+        # else:
+        #     filled_inform[key] = const.NO_MATCH
 
-        return filled_inform
+        # return filled_inform
+        """ Takes unfilled inform slots and current_slots, returns dictionary of filled informed slots (with values)
+
+        Arguments:
+        inform_slots_to_be_filled   --  Something that looks like {starttime:None, theater:None} where starttime and theater are slots that the agent needs filled
+        current_slots               --  Contains a record of all filled slots in the conversation so far - for now, just use current_slots['inform_slots'] which is a dictionary of the already filled-in slots
+
+        Returns:
+        filled_in_slots             --  A dictionary of form {slot1:value1, slot2:value2} for each sloti in inform_slots_to_be_filled
+        """
+
+        kb_results = self.get_db_results(current_slots)
+        #if dialog_config.auto_suggest == 1:
+        #    print 'Number of entries in KB satisfying current constraints: ', len(kb_results)
+
+        filled_in_slots = {}
+        if const.TASK_COMPLETE_SLOT in inform_slots_to_be_filled.keys():
+            filled_in_slots.update(current_slots[const.INFORM_SLOTS])
+
+        for slot in inform_slots_to_be_filled.keys():
+            if slot == 'numberofpeople':
+                if slot in current_slots[const.INFORM_SLOTS].keys():
+                    filled_in_slots[slot] = current_slots[const.INFORM_SLOTS][slot]
+                elif slot in inform_slots_to_be_filled.keys():
+                    filled_in_slots[slot] = inform_slots_to_be_filled[slot]
+                continue
+
+            if slot == 'ticket' or slot == const.TASK_COMPLETE_SLOT:
+                filled_in_slots[slot] = dialog_config.TICKET_AVAILABLE if len(kb_results)>0 else const.NO_MATCH
+                continue
+
+            if slot == const.THANKS: continue
+
+            ####################################################################
+            #   Grab the value for the slot with the highest count and fill it
+            ####################################################################
+            values_dict = self._count_slot_values(slot, kb_results)
+
+            values_counts = [(v, values_dict[v]) for v in values_dict.keys()]
+            if len(values_counts) > 0:
+                if inform_slots_to_be_filled[slot] == "PLACEHOLDER":
+                    filled_in_slots[slot] = sorted(values_counts, key = lambda x: x[1], reverse=True)[0][0] # something wrong here
+                else:
+                    filled_in_slots[slot] = inform_slots_to_be_filled[slot]
+            else:
+                filled_in_slots[slot] = const.NO_MATCH #"NO VALUE MATCHES SNAFU!!!"
+
+        return filled_in_slots
 
     def _count_slot_values(self, key, db_subdict):
         """
@@ -185,3 +232,23 @@ class DBQuery:
         self.cached_db_slot[inform_items].update(db_results)
         assert self.cached_db_slot[inform_items] == db_results
         return db_results
+
+    def suggest_slot_values(self, request_slots, current_slots):
+        """ Return the suggest slot values """
+
+        avail_kb_results = self.get_db_results(current_slots)
+
+
+        return_suggest_slot_vals = {}
+        for slot in request_slots.keys():
+            avail_values_dict = self._count_slot_values(slot, avail_kb_results)
+            values_counts = [(v, avail_values_dict[v]) for v in avail_values_dict.keys()]
+
+            if len(values_counts) > 0:
+                return_suggest_slot_vals[slot] = []
+                sorted_dict = sorted(values_counts, key = lambda x: -x[1])
+                for k in sorted_dict: return_suggest_slot_vals[slot].append(k[0])
+            else:
+                return_suggest_slot_vals[slot] = []
+
+        return return_suggest_slot_vals

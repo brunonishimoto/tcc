@@ -78,12 +78,13 @@ class RuleBasedUserSimulator:
         self.episode_over = False
         self.dialogue_status = const.NO_OUTCOME_YET
 
-        return self.__return_init_action()
+        self.first_turn = True
+        return {const.INTENT: const.GREETING, const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
 
     def __sample_goal(self, episode=None, train=True):
         if train:
-            sample_goal = self.train_list[episode % len(self.train_list)]
-            # sample_goal = random.choice(self.train_list)
+            # sample_goal = self.train_list[episode % len(self.train_list)]
+            sample_goal = random.choice(self.train_list)
         else:
             sample_goal = self.test_list[episode % len(self.test_list)]
             # sample_goal = random.choice(self.test_list)
@@ -108,13 +109,13 @@ class RuleBasedUserSimulator:
             for inform_key in self.init_informs:
                 if inform_key in self.goal[const.INFORM_SLOTS]:
                     self.state[const.INFORM_SLOTS][inform_key] = self.goal[const.INFORM_SLOTS][inform_key]
-                    self.state[const.REST_SLOTS].pop(inform_key)
+                    self.state[const.REST_SLOTS].pop(inform_key, None)
                     self.state[const.HISTORY_SLOTS][inform_key] = self.goal[const.INFORM_SLOTS][inform_key]
             # If nothing was added then pick a random one to add
             if not self.state[const.INFORM_SLOTS]:
                 key, value = random.choice(list(self.goal[const.INFORM_SLOTS].items()))
                 self.state[const.INFORM_SLOTS][key] = value
-                self.state[const.REST_SLOTS].pop(key)
+                self.state[const.REST_SLOTS].pop(key, None)
                 self.state[const.HISTORY_SLOTS][key] = value
 
         # Now add a request, do a random one if something other than def. available
@@ -176,11 +177,20 @@ class RuleBasedUserSimulator:
         if self.max_round > 0 and agent_action[const.ROUND] == self.max_round:
             done = True
             success = const.FAILED_DIALOG
-            self.state[const.INTENT] = const.CLOSING
+            self.state[const.INTENT] = const.THANKS
             self.state[const.REQUEST_SLOTS].clear()
         else:
             agent_intent = agent_action[const.INTENT]
-            if agent_intent == const.REQUEST:
+            if self.first_turn:
+                user_response = self.__return_init_action()
+                reward = self.__reward_function(success)
+                self.first_turn = False
+                return user_response, reward, done, True if success is 1 else False
+            elif agent_intent == const.GREETING:
+                user_response = self.__return_init_action()
+                reward = self.__reward_function(success)
+                return user_response, reward, done, True if success is 1 else False
+            elif agent_intent == const.REQUEST:
                 self.__response_to_request(agent_action)
             # elif agent_intent == const.MULTIPLE_CHOICE:
             #     self.__response_multiple_choice(agent_action)
@@ -250,7 +260,7 @@ class RuleBasedUserSimulator:
                 self.state[const.HISTORY_SLOTS][request_slot] = self.goal[const.INFORM_SLOTS][request_slot]
                 self.state[const.REQUEST_SLOTS].clear()
                 if request_slot in self.state[const.REST_SLOTS]:
-                    self.state[const.REST_SLOTS].pop(request_slot)
+                    self.state[const.REST_SLOTS].pop(request_slot, None)
         else:
             self.state[const.INTENT] = const.THANKS
 
@@ -308,7 +318,7 @@ class RuleBasedUserSimulator:
                 if rest_informs:
                     key_choice, value_choice = random.choice(list(rest_informs.items()))
                     self.state[const.INFORM_SLOTS][key_choice] = value_choice
-                    self.state[const.REST_SLOTS].pop(key_choice)
+                    self.state[const.REST_SLOTS].pop(key_choice, None)
                     self.state[const.HISTORY_SLOTS][key_choice] = value_choice
             # Fourth and Final Case: otherwise the user sim does not care about the slot being requested, then inform
             # 'anything' as the value of the requested slot
@@ -328,7 +338,7 @@ class RuleBasedUserSimulator:
                 if random_slot in self.goal[const.INFORM_SLOTS]:
                     self.state[const.INFORM_SLOTS][random_slot] = self.goal[const.INFORM_SLOTS][random_slot]
 
-                    self.state[const.REST_SLOTS].pop(random_slot)
+                    self.state[const.REST_SLOTS].pop(random_slot, None)
                     self.state[const.INTENT] = const.INFORM
                 # if the random slot is in the request slots
                 elif random_slot in self.goal[const.REQUEST_SLOTS]:
@@ -381,7 +391,7 @@ class RuleBasedUserSimulator:
                         if value != const.UNKNOWN:
                             self.state[const.INTENT] = const.INFORM
                             self.state[const.INFORM_SLOTS][key] = value
-                            self.state[const.REST_SLOTS].pop(key)
+                            self.state[const.REST_SLOTS].pop(key, None)
                             self.state[const.HISTORY_SLOTS][key] = value
                         else:
                             self.state[const.INTENT] = const.REQUEST
@@ -414,7 +424,7 @@ class RuleBasedUserSimulator:
                     if value != const.UNKNOWN:
                         self.state[const.INTENT] = const.INFORM
                         self.state[const.INFORM_SLOTS][key] = value
-                        self.state[const.REST_SLOTS].pop(key)
+                        self.state[const.REST_SLOTS].pop(key, None)
                         self.state[const.HISTORY_SLOTS][key] = value
                     else:
                         self.state[const.INTENT] = const.REQUEST
@@ -437,7 +447,7 @@ class RuleBasedUserSimulator:
             self.state[const.INFORM_SLOTS][slot] = random.choice(agent_action[const.INFORM_SLOTS][slot])
 
         self.state[const.INTENT] = const.INFORM
-        if slot in self.state[const.REST_SLOTS]: self.state[const.REST_SLOTS].pop(slot)
+        if slot in self.state[const.REST_SLOTS]: self.state[const.REST_SLOTS].pop(slot, None)
         if slot in self.state[const.REQUEST_SLOTS].keys(): del self.state[const.REQUEST_SLOTS][slot]
 
     def __response_to_match_found(self, agent_action):

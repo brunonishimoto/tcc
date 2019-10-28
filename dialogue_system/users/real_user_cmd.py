@@ -78,7 +78,7 @@ class RealUserCMD():
         # First check round num, if equal to max then fail
         if agent_action[const.ROUND] == self.max_round:
             success = const.FAILED_DIALOG
-            user_response[const.INTENT] = const.CLOSING
+            user_response[const.INTENT] = const.THANKS
         else:
             user_response = self.__return_response()
             success = self.__return_success()

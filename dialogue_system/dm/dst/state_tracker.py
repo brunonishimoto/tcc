@@ -59,6 +59,20 @@ class StateTracker:
         for action in self.history:
             print(action)
 
+    def get_suggest_slots_values(self, request_slots):
+        """ Get the suggested values for request slots """
+
+        suggest_slot_vals = {}
+        if len(request_slots) > 0:
+            suggest_slot_vals = self.db_helper.suggest_slot_values(request_slots, self.current_informs)
+
+        return suggest_slot_vals
+
+    def get_current_kb_results(self):
+        """ get the kb_results for current state """
+        kb_results = self.db_helper.get_db_results(self.current_informs)
+        return kb_results
+
     def get_state(self, done=False):
         """
         Returns the state representation as a numpy array which is fed into the agent's neural network.
@@ -163,10 +177,10 @@ class StateTracker:
             inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], self.current_informs)
             agent_action[const.INFORM_SLOTS] = inform_slots
             assert agent_action[const.INFORM_SLOTS]
-            key, value = list(agent_action[const.INFORM_SLOTS].items())[0]  # Only one
-            assert key != const.MATCH_FOUND
-            assert value != const.PLACEHOLDER, 'KEY: {}'.format(key)
-            self.current_informs[key] = value
+            for key, value in list(agent_action[const.INFORM_SLOTS].items()):
+                assert key != const.MATCH_FOUND
+                assert value != const.PLACEHOLDER, 'KEY: {}'.format(key)
+                self.current_informs[key] = value
         # If intent is match_found then fill the action informs with the matches informs (if there is a match)
         elif agent_action[const.INTENT] == const.MATCH_FOUND:
             assert not agent_action[const.INFORM_SLOTS], 'Cannot inform and have intent of match found!'

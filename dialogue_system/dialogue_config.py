@@ -8,7 +8,7 @@
 # Usersim Config
 #######################################
 # Used in EMC for intent error (and in user)
-usersim_intents = ['inform', 'request', 'thanks', 'deny', 'closing']
+usersim_intents = ['inform', 'request', 'thanks', 'deny']
 
 # The goal of the agent is to inform a match for this key
 usersim_default_key = 'ticket'
@@ -30,7 +30,7 @@ agent_request_slots = ['moviename', 'theater', 'starttime', 'date', 'numberofpeo
 
 # Possible actions for agent
 agent_actions = [
-    # {'intent': 'greeting', 'inform_slots': {}, 'request_slots': {}},
+    {'intent': 'greeting', 'inform_slots': {}, 'request_slots': {}},
     {'intent': 'match_found', 'inform_slots': {}, 'request_slots': {}},
     {'intent': 'thanks', 'inform_slots': {}, 'request_slots': {}},
     # {'intent':"confirm_answer", 'inform_slots':{}, 'request_slots':{}},
@@ -48,19 +48,20 @@ for slot in agent_request_slots:
 
 # Rule-based policy request list
 rule_requests = ['moviename', 'starttime', 'city', 'date', 'theater', 'numberofpeople']
+rule_informs = ['moviename', 'theater']
 
 # These are possible inform slot keys that cannot be used to query
-no_query_keys = ['numberofpeople', usersim_default_key]
+no_query_keys = ['numberofpeople', 'taskcomplete', 'greeting', 'closing', usersim_default_key]
 
 #######################################
 # Global config
 #######################################
 
 # All possible intents (for one-hot conversion in ST.get_state())
-all_intents = ['inform', 'request', 'match_found', 'thanks', 'deny']
+all_intents = ['greeting', 'inform', 'request', 'match_found', 'thanks', 'deny']
 
 # All possible slots (for one-hot conversion in ST.get_state())
 all_slots = ['actor', 'actress', 'city', 'critic_rating', 'date', 'description', 'distanceconstraints',
-             'genre', 'greeting', 'implicit_value', 'movie_series', 'moviename', 'mpaa_rating', 'closing',
+             'genre', 'greeting', 'implicit_value', 'movie_series', 'moviename', 'mpaa_rating',
              'numberofpeople', 'numberofkids', 'other', 'price', 'seating', 'starttime', 'state',
-             'theater', 'theater_chain', 'video_format', 'zip', 'result', usersim_default_key, 'mc_list']
+             'theater', 'theater_chain', 'video_format', 'zip', 'closing', usersim_default_key, 'mc_list']

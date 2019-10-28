@@ -1,5 +1,6 @@
 from dialogue_system.dm.agents.dqn_agent import DQNAgent
 import random
+import dialogue_system.constants as const
 import numpy as np
 
 
@@ -47,6 +48,13 @@ class DQNSoftmax(DQNAgent):
         """
 
         if train:
+            if self.first_turn:
+                self.first_turn = False
+
+                rule_response =  {const.INTENT: const.GREETING, const.INFORM_SLOTS: {},
+                             const.REQUEST_SLOTS: {}}
+                index = self._map_action_to_index(rule_response)
+                return index, rule_response
 
             if use_rule:
                 return self._rule_action()

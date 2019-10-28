@@ -1,4 +1,4 @@
-from .nlu import NLU
+from .nlu_baseline import NLUBaseline
 from .nlu_slot_gated import NLUSlotGated
 
 def load(config):

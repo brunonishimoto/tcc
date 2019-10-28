@@ -1,5 +1,6 @@
 import collections
 import json
+import re
 from dialogue_system import DialogueSystem
 from utils.util import save_json_file, log
 
@@ -15,7 +16,7 @@ class Tester:
 
         self.num_ep_test = run_dict['num_ep_test']
 
-        self.performance_path = run_dict['performance_path']
+        self.performance_path = re.sub(r'\.json', rf'_test.json', run_dict['performance_path'])
 
         self.performance_metrics = collections.defaultdict(dict)
 
@@ -59,6 +60,6 @@ class Tester:
         self.performance_metrics['test']['avg_reward'] = period_metrics['reward'] / self.num_ep_test
         self.performance_metrics['test']['avg_round'] = period_metrics['round'] / self.num_ep_test
 
-        log(['dialogue, runner'], '...Testing Ended')
+        log(['dialogue', 'runner'], '...Testing Ended')
 
         save_json_file(self.performance_path, self.performance_metrics)

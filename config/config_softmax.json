@@ -1,25 +1,26 @@
 {
-  "use_nl": true,
-  "real_user": true,
+  "use_nl": false,
+  "real_user": false,
   "runner": {
-    "name": "Tester"
+    "name": "Trainer"
   },
   "user": {
-    "name": "RealUserSlack"
+    "name": "RuleBasedUserSimulator",
+    "give_goal": false
   },
   "db_file_paths": {
-    "database": "data/movie_db.p",
+    "database": "data/movie.kb.1k.v1.p",
     "dict": "data/movie_dict.p",
-    "user_goals": "data/movie_user_goals.p"
+    "user_goals": "data/user_goals_first.v2.p"
   },
   "run": {
     "warmup_mem": 1000,
-    "num_ep_run": 5000,
-    "num_ep_test": 200,
+    "num_ep_run": 1500,
+    "num_ep_test": 500,
     "train_freq": 100,
     "max_round_num": 20,
-    "split_ratio": 0.1,
-    "sigma_init": 0.5,
+    "split_ratio": 0.2,
+    "sigma_init": 0,
     "sigma_stop": 0,
     "sigma_decay": 3000,
     "success_rate_threshold": 0.3,
@@ -30,7 +31,7 @@
   },
   "agent": {
     "name": "DQNSoftmax",
-    "save_weights_file_path": "weights/dm/model_softmax.h5",
+    "save_weights_file_path": "weights/dm/warm_up-no_exp.h5",
     "load_weights_file_path": "",
     "vanilla": true,
     "batch_size": 16,
@@ -50,8 +51,8 @@
     }
   },
   "nlu": {
-    "name": "NLUSlotGated",
-    "model_path": "weights/nlu/_step_9063_epochs_19_domain_movie.ckpt",
+    "name": "NLUBaseline",
+    "model_path": "weights/nlu/lstm_[1468447442.91]_39_80_0.921.p",
     "vocab_path": "data/vocab",
     "layer_size": 64,
     "model_type": "full",
@@ -61,7 +62,7 @@
   "nlg": {
     "name": "NLG",
     "load_weights_file_path": "weights/nlg/lstm_tanh_relu_[1468202263.38]_2_0.610.p",
-    "load_predefined_file_path": "data/dia_act_nl_pairs.v6.json",
+    "load_predefined_file_path": "data/dia_act_nl_pairs.v7.json",
     "beam_size": 10
   },
   "emc": {

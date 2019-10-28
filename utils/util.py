@@ -1,4 +1,5 @@
 import json
+import os
 import numpy as np
 from setup_logger import loggers
 
@@ -35,6 +36,9 @@ def remove_empty_slots(dic):
 def save_json_file(path, data):
     """Save a json file."""
     try:
+        if not os.path.exists(os.path.split(path)[0]):
+            os.makedirs(os.path.split(path)[0])
+
         json.dump(data, open(path, "w"), indent=2)
         print(f'saved data in {path}')
     except Exception as e:

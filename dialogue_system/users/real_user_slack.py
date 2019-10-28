@@ -3,6 +3,8 @@ from utils.util import log
 
 import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
+import pickle
+import random
 import time
 import re
 
@@ -17,10 +19,17 @@ class RealUserSlack():
         Parameters:
             config (dict): Loaded config as dict
         """
+
+        goals_path = config['db_file_paths']['user_goals']
+        self.goal_list = pickle.load(open(goals_path, 'rb'), encoding='latin1')
+
+        # Flag if we give a goal to the user
+        self.get_goal = config['user']['give_goal']
+
         self.max_round = config['run']['max_round_num']
 
         # instantiate Slack client
-        self.slack_client = SlackClient('################TOKEN###################')
+        self.slack_client = SlackClient('xoxb-628422054787-639344980276-Gj5CYhg8F3S2g6vqj4LNrsfJ')
 
         # starterbot's user ID in Slack: value is assigned after the bot starts up
         self.starterbot_id = None
@@ -33,26 +42,45 @@ class RealUserSlack():
             log(['debug'], "Connected to the Slack!")
             # Read bot's user ID by calling Web API method `auth.test`
             self.starterbot_id = self.slack_client.api_call("auth.test")["user_id"]
+
+            self.channel = self.__get_channel('geral')
         else:
             log(['debug'], "Connection failed")
             exit()
 
-    def parse_events(self, slack_events):
+    def __get_channel(self, channel):
+        channels_call = self.slack_client.api_call("channels.list")
+        channels_list = None
+
+        if channels_call['ok']:
+            channels_list = channels_call['channels']
+
+        for c in channels_list:
+            if c['name'] == channel:
+                return c['id']
+
+        raise Exception(f"No such channel: {channel}")
+
+    def __parse_events(self, slack_events):
         """
             Parses a list of events coming from the Slack RTM API to find bot commands.
             If a bot command is found, this function returns a tuple of command and channel.
             If its not found, then this function returns None, None.
         """
         for event in slack_events:
-            if event["type"] == "message" and not "subtype" in event:
-                user_id, message = self.parse_direct_mention(event["text"])
+            if event["type"] == "message" and not "subtype" in event and event["channel"] == self.channel:
+                user_id, message = self.__parse_direct_mention(event["text"])
                 if user_id == self.starterbot_id:
-                    return message, event["channel"]
-                if event["channel"] == "DJTA4UUSY":
-                    return event["text"], event["channel"]
-        return None, None
+                    return message
+                return event["text"]
+                # user_id, message = self.__parse_direct_mention(event["text"])
+                # if user_id == self.starterbot_id:
+                #     return message, event["channel"]
+                # if event["channel"] == "DJTA4UUSY":
+                #     return event["text"], event["channel"]
+        return None
 
-    def parse_direct_mention(self, message_text):
+    def __parse_direct_mention(self, message_text):
         """
             Finds a direct mention (a mention that is at the beginning) in message text
             and returns the user ID which was mentioned. If there is no direct mention, returns None
@@ -68,6 +96,14 @@ class RealUserSlack():
         Returns:
             dict: The user response
         """
+        if self.get_goal:
+            sample_goal = random.choice(self.goal_list)
+
+            self.slack_client.api_call(
+                "chat.postMessage",
+                channel=self.channel,
+                text=f"Your goal is:\n {sample_goal}"
+            )
 
         return self.__return_response()
 
@@ -77,7 +113,7 @@ class RealUserSlack():
         """
         command = None
         while not command:
-            command, self.channel = self.parse_events(self.slack_client.rtm_read())
+            command = self.__parse_events(self.slack_client.rtm_read())
             time.sleep(self.RTM_READ_DELAY)
 
         return {'nl': command}
@@ -91,8 +127,14 @@ class RealUserSlack():
         """
 
         success = -2
+        self.slack_client.api_call(
+            "chat.postMessage",
+            channel=self.channel,
+            text=f"The agent could complete the task? -- (-1, 0 or 1) for (loss, neither loss nor win, win)"
+        )
         while success not in (-1, 0, 1):
-            command, self.channel = self.parse_events(self.slack_client.rtm_read())
+
+            command = self.__parse_events(self.slack_client.rtm_read())
             success = int(command)
         return success
 
@@ -130,15 +172,21 @@ class RealUserSlack():
         )
 
         done = False
+        success = const.NO_OUTCOME_YET
         user_response = {const.INTENT: '', const.REQUEST_SLOTS: {}, const.INFORM_SLOTS: {}}
 
         # First check round num, if equal to max then fail
         if agent_action[const.ROUND] == self.max_round:
             success = const.FAILED_DIALOG
-            user_response[const.INTENT] = const.CLOSING
+            user_response[const.INTENT] = const.THANKS
         else:
-            user_response = self.__return_response()
-            success = self.__return_success()
+            if agent_action[const.INTENT] == const.THANKS:
+                user_response = self.__return_response()
+                success = self.__return_success()
+            else:
+                user_response = self.__return_response()
+
+            log(['debug'], f"User: {user_response} ---- sucess: {success}")
 
         if success == const.FAILED_DIALOG or success == const.SUCCESS_DIALOG:
             done = True

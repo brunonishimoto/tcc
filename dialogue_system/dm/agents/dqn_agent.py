@@ -8,6 +8,7 @@ import random
 import copy
 import numpy as np
 import re
+import os
 
 
 # Some of the code based off of https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
@@ -39,6 +40,10 @@ class DQNAgent:
         self.load_weights_file_path = self.C['load_weights_file_path']
         self.save_weights_file_path = self.C['save_weights_file_path']
 
+        # Create directory if it does not exist
+        if self.save_weights_file_path and not os.path.exists(os.path.split(self.save_weights_file_path)[0]):
+            os.makedirs(os.path.split(self.save_weights_file_path)[0])
+
         if self.max_memory_size < self.batch_size:
             raise ValueError('Max memory size must be at least as great as batch size!')
 
@@ -48,6 +53,7 @@ class DQNAgent:
         self.action_counts = np.ones(self.num_actions)
 
         self.rule_request_set = cfg.rule_requests
+        self.rule_inform_set = cfg.rule_informs
 
         self.reset()
 
@@ -64,7 +70,9 @@ class DQNAgent:
 
     def reset(self):
         """Resets the rule-based variables."""
-        self.rule_current_slot_index = 0
+        self.rule_current_request_slot_index = 0
+        self.rule_current_inform_slot_index = 0
+        self.first_turn = True
         self.rule_phase = const.NOT_DONE
 
     def get_action(self, state, use_rule=False, train=True):
@@ -82,12 +90,18 @@ class DQNAgent:
             dict: The action/response itself
 
         """
+        if self.rule_current_request_slot_index < len(self.rule_request_set):
+            slot = self.rule_request_set[self.rule_current_request_slot_index]
+            self.rule_current_request_slot_index += 1
 
-        if self.rule_current_slot_index < len(self.rule_request_set):
-            slot = self.rule_request_set[self.rule_current_slot_index]
-            self.rule_current_slot_index += 1
             rule_response = {const.INTENT: const.REQUEST, const.INFORM_SLOTS: {},
                              const.REQUEST_SLOTS: {slot: const.UNKNOWN}}
+        elif self.rule_current_inform_slot_index < len(self.rule_inform_set):
+            slot = self.rule_inform_set[self.rule_current_inform_slot_index]
+            self.rule_current_inform_slot_index += 1
+
+            rule_response = {const.INTENT: const.INFORM, const.INFORM_SLOTS: {slot: const.PLACEHOLDER},
+                             const.REQUEST_SLOTS: {}}
         elif self.rule_phase == const.NOT_DONE:
             rule_response = {const.INTENT: const.MATCH_FOUND, const.INFORM_SLOTS: {}, const.REQUEST_SLOTS: {}}
             self.rule_phase = const.DONE
