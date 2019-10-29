@@ -75,7 +75,7 @@ class DQNAgent:
         self.first_turn = True
         self.rule_phase = const.NOT_DONE
 
-    def get_action(self, state, use_rule=False, train=True):
+    def get_action(self, state, step=None, use_rule=False, train=True):
         # Implemented in child classes
         pass
 
@@ -90,7 +90,12 @@ class DQNAgent:
             dict: The action/response itself
 
         """
-        if self.rule_current_request_slot_index < len(self.rule_request_set):
+        if self.first_turn:
+            self.first_turn = False
+
+            rule_response =  {const.INTENT: const.GREETING, const.INFORM_SLOTS: {},
+                            const.REQUEST_SLOTS: {}}
+        elif self.rule_current_request_slot_index < len(self.rule_request_set):
             slot = self.rule_request_set[self.rule_current_request_slot_index]
             self.rule_current_request_slot_index += 1
 

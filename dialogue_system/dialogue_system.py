@@ -31,11 +31,9 @@ class DialogueSystem:
         self.real_user = config['real_user']
         self.state = None
 
-    def run_round(self, episode=None, use_rule=False, train=True):
+    def run_round(self, step=None, use_rule=False, train=True):
         # 1) Agent takes action given state tracker's representation of dialogue (state)
-        agent_action_index, agent_action = self.agent.get_action(self.state, episode=episode, use_rule=use_rule, train=train)
-
-        log(['dialogue'], f'Agent: {agent_action}')
+        agent_action_index, agent_action = self.agent.get_action(self.state, step=step, use_rule=use_rule, train=train)
 
         # 2) Update state tracker with the agent's action
         self.state_tracker.update_state_agent(agent_action)

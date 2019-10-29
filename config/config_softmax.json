@@ -9,9 +9,9 @@
     "give_goal": false
   },
   "db_file_paths": {
-    "database": "data/movie.kb.1k.v1.p",
+    "database": "data/movie_db.p",
     "dict": "data/movie_dict.p",
-    "user_goals": "data/user_goals_first.v2.p"
+    "user_goals": "data/movie_user_goals.p"
   },
   "run": {
     "warmup_mem": 1000,
@@ -19,7 +19,7 @@
     "num_ep_test": 500,
     "train_freq": 100,
     "max_round_num": 20,
-    "split_ratio": 0.2,
+    "split_ratio": 0.90,
     "sigma_init": 0,
     "sigma_stop": 0,
     "sigma_decay": 3000,

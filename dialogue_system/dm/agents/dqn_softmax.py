@@ -3,6 +3,8 @@ import random
 import dialogue_system.constants as const
 import numpy as np
 
+from utils.util import log
+
 
 # Some of the code based off of https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
 # Note: In original paper's code the epsilon is not annealed and annealing is not implemented in this code either
@@ -29,7 +31,7 @@ class DQNSoftmax(DQNAgent):
         self.tau_decay = self.C['tau_decay']
         self.tau = self.tau_init
 
-    def get_action(self, state, episode=None, use_rule=False, train=True):
+    def get_action(self, state, step=None, use_rule=False, train=True):
         """
         Returns the action of the agent given a state.
 
@@ -48,14 +50,6 @@ class DQNSoftmax(DQNAgent):
         """
 
         if train:
-            if self.first_turn:
-                self.first_turn = False
-
-                rule_response =  {const.INTENT: const.GREETING, const.INFORM_SLOTS: {},
-                             const.REQUEST_SLOTS: {}}
-                index = self._map_action_to_index(rule_response)
-                return index, rule_response
-
             if use_rule:
                 return self._rule_action()
             else:
@@ -63,7 +57,7 @@ class DQNSoftmax(DQNAgent):
                 # Linear decay
                 a = -float(self.tau_init - self.tau_stop) / self.tau_decay
                 b = float(self.tau_init)
-                self.tau = max(self.tau_stop, a * float(episode) + b)
+                self.tau = max(self.tau_stop, a * float(step) + b)
 
                 # Softmax
 

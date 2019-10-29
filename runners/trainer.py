@@ -81,7 +81,7 @@ class Trainer:
         self.dialogue_system.agent.save_weights()
 
         # Test on the actual weights
-        Tester(self.tester_config).run()
+        # Tester(self.tester_config).run()
 
         log(['dialogue', 'runner'], '...Warmup Ended')
 
@@ -98,6 +98,7 @@ class Trainer:
         episode = 0
         period_metrics = {'reward': 0, 'success': 0, 'round': 0}
         best_success_rate = 0.0
+        self.steps = 0
 
         while episode < self.num_ep_run:
             self.dialogue_system.reset(episode)
@@ -106,12 +107,13 @@ class Trainer:
 
             while not done:
                 # Update sigma for a soft transition
-                sigma = self.__update_sigma(episode)
+                sigma = self.__update_sigma(self.steps)
                 use_rule = True if random.random() <= sigma else False
 
-                _, reward, done, success = self.dialogue_system.run_round(episode=episode, use_rule=use_rule)
+                _, reward, done, success = self.dialogue_system.run_round(step=self.steps, use_rule=use_rule)
                 period_metrics['reward'] += reward
                 rounds += 1
+                self.steps += 1
 
             period_metrics['success'] += success
             period_metrics['round'] += rounds
@@ -152,7 +154,7 @@ class Trainer:
                 save_json_file(self.performance_path, self.performance_metrics)
 
                 # Test on the actual weights
-                Tester(self.tester_config).run()
+                # Tester(self.tester_config).run()
 
             episode += 1
 

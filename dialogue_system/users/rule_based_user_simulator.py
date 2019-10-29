@@ -183,7 +183,10 @@ class RuleBasedUserSimulator:
             agent_intent = agent_action[const.INTENT]
             if self.first_turn:
                 user_response = self.__return_init_action()
-                reward = self.__reward_function(success)
+
+                reward = -2
+                if agent_intent == const.GREETING:
+                    reward = 2
                 self.first_turn = False
                 return user_response, reward, done, True if success is 1 else False
             elif agent_intent == const.GREETING:
