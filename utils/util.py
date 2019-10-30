@@ -33,13 +33,13 @@ def remove_empty_slots(dic):
             if dic[id][key] == '':
                 dic[id].pop(key)
 
-def save_json_file(path, data):
+def save_json_file(path, data, mode="w"):
     """Save a json file."""
     try:
         if not os.path.exists(os.path.split(path)[0]):
             os.makedirs(os.path.split(path)[0])
 
-        json.dump(data, open(path, "w"), indent=2)
+        json.dump(data, open(path, mode), indent=2)
         print(f'saved data in {path}')
     except Exception as e:
         print(f'Error: Writing model fails: {path}')

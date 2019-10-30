@@ -50,7 +50,7 @@ class DialogueSystem:
             if self.use_nl and not self.real_user:
                 user_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'usr')
             user_action = self.__transform_action(user_action)
-            log(['dialogue'], f'User: {user_action}')
+            log(['debug', 'dialogue'], f'User: {user_action}')
 
         # 5) Update state tracker with user action
         self.state_tracker.update_state_user(user_action)

@@ -1,12 +1,12 @@
 {
-  "use_nl": false,
-  "real_user": false,
+  "use_nl": true,
+  "real_user": true,
   "runner": {
-    "name": "Trainer"
+    "name": "Tester"
   },
   "user": {
-    "name": "RuleBasedUserSimulator",
-    "give_goal": false
+    "name": "RealUserSlack",
+    "give_goal": true
   },
   "db_file_paths": {
     "database": "data/movie_db.p",
@@ -24,15 +24,15 @@
     "sigma_stop": 0,
     "sigma_decay": 3000,
     "success_rate_threshold": 0.3,
-    "performance_path": "checkpoints/performance_softmax.json"
+    "performance_path": ""
   },
   "dst": {
     "name": "StateTracker"
   },
   "agent": {
     "name": "DQNSoftmax",
-    "save_weights_file_path": "weights/dm/warm_up-no_exp.h5",
-    "load_weights_file_path": "",
+    "save_weights_file_path": "",
+    "load_weights_file_path": "weights/dm/warm_up-no_exp.h5",
     "vanilla": true,
     "batch_size": 16,
     "tau_init": 2.0,

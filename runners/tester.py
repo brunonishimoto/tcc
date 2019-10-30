@@ -62,4 +62,4 @@ class Tester:
 
         log(['dialogue', 'runner'], '...Testing Ended')
 
-        save_json_file(self.performance_path, self.performance_metrics)
+        save_json_file(self.performance_path, self.performance_metrics, mode="a")

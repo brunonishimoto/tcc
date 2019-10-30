@@ -29,7 +29,7 @@ class RealUserSlack():
         self.max_round = config['run']['max_round_num']
 
         # instantiate Slack client
-        self.slack_client = SlackClient('xoxb-628422054787-639344980276-Gj5CYhg8F3S2g6vqj4LNrsfJ')
+        self.slack_client = SlackClient('xoxb-628422054787-639344980276-LWiCzmjAEvNHp7ERoWcicdpP')
 
         # starterbot's user ID in Slack: value is assigned after the bot starts up
         self.starterbot_id = None
@@ -43,7 +43,8 @@ class RealUserSlack():
             # Read bot's user ID by calling Web API method `auth.test`
             self.starterbot_id = self.slack_client.api_call("auth.test")["user_id"]
 
-            self.channel = self.__get_channel('geral')
+            # self.channel = self.__get_channel('geral')
+            self.channel = "DJTA4UUSY"
         else:
             log(['debug'], "Connection failed")
             exit()
@@ -68,16 +69,17 @@ class RealUserSlack():
             If its not found, then this function returns None, None.
         """
         for event in slack_events:
-            if event["type"] == "message" and not "subtype" in event and event["channel"] == self.channel:
+            if event["type"] == "message" and not "subtype" in event:
+                return event["text"]
                 user_id, message = self.__parse_direct_mention(event["text"])
                 if user_id == self.starterbot_id:
                     return message
                 return event["text"]
-                # user_id, message = self.__parse_direct_mention(event["text"])
-                # if user_id == self.starterbot_id:
-                #     return message, event["channel"]
-                # if event["channel"] == "DJTA4UUSY":
-                #     return event["text"], event["channel"]
+                user_id, message = self.__parse_direct_mention(event["text"])
+                if user_id == self.starterbot_id:
+                    return message, event["channel"]
+                if event["channel"] == "DJTA4UUSY":
+                    return event["text"], event["channel"]
         return None
 
     def __parse_direct_mention(self, message_text):
@@ -186,7 +188,7 @@ class RealUserSlack():
             else:
                 user_response = self.__return_response()
 
-            log(['debug'], f"User: {user_response} ---- sucess: {success}")
+            # log(['debug'], f"User: {user_response} ---- sucess: {success}")
 
         if success == const.FAILED_DIALOG or success == const.SUCCESS_DIALOG:
             done = True

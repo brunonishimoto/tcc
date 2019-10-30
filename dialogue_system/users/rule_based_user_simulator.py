@@ -184,9 +184,9 @@ class RuleBasedUserSimulator:
             if self.first_turn:
                 user_response = self.__return_init_action()
 
-                reward = -2
+                reward = -5
                 if agent_intent == const.GREETING:
-                    reward = 2
+                    reward = 5
                 self.first_turn = False
                 return user_response, reward, done, True if success is 1 else False
             elif agent_intent == const.GREETING:
