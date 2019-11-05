@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, Conv1D, Dropout, MaxPooling1D, Flatten
+from keras.layers import Dense, LSTM, Flatten
 from keras.optimizers import Adam
 
 
@@ -20,10 +20,8 @@ class DRQNModel1:
     def build_model(self):
         """Builds and returns model/graph of neural network."""
         model = Sequential()
-        model.add(Conv1D(64, kernel_size=3, input_shape=self.input_dim))
-        model.add(Dropout(0.5))
-        model.add(MaxPooling1D(pool_size=2))
-        model.add((Dense(self.hidden_size, activation=self.activation)))
+        model.add(Flatten())
+        model.add((Dense(self.hidden_size, input_shape=self.input_dim, activation=self.activation)))
         model.add(LSTM(self.output_dim, activation=self.activation_out))
         model.compile(loss=self.loss, optimizer=Adam(lr=self.lr, decay=self.lr_decay))
 

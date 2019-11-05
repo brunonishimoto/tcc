@@ -1,6 +1,3 @@
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import Adam
 import dialogue_system.dm.agents.models as models
 import dialogue_system.constants as const
 import dialogue_system.dialogue_config as cfg

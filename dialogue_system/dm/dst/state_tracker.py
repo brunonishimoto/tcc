@@ -43,7 +43,7 @@ class StateTracker:
     def get_state_size(self):
         """Returns the state size of the state representation used by the agent."""
 
-        return (2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num, 1)
+        return (1, 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num)
 
     def reset(self):
         """Resets current_informs, history and round_num."""
