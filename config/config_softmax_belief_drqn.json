@@ -22,16 +22,21 @@
     "split_ratio": 1.0,
     "sigma_init": 0,
     "sigma_stop": 0,
-    "sigma_decay": 3000,
+    "sigma_decay": 2000,
     "success_rate_threshold": 0.3,
-    "performance_path": "checkpoints/normal/performance.json"
+    "performance_path": "checkpoints/belief_drqn/performance.json"
   },
   "dst": {
-    "name": "StateTracker"
+    "name": "BeliefStateTracker",
+    "n_best": 5,
+    "error_rate": 0.2,
+    "confuse_intent": 0.2,
+    "confuse_slot": 0.3,
+    "confuse_value": 0.5
   },
   "agent": {
     "name": "DQNSoftmax",
-    "save_weights_file_path": "weights/dm/normal/model.h5",
+    "save_weights_file_path": "weights/dm/belief_drqn/model.h5",
     "load_weights_file_path": "",
     "vanilla": true,
     "batch_size": 16,
@@ -41,7 +46,7 @@
     "gamma": 0.9,
     "max_mem_size": 50000,
     "model": {
-      "name": "DQNModel",
+      "name": "DRQNModel",
       "dqn_hidden_size": 80,
       "activation": "relu",
       "activation_out": "linear",

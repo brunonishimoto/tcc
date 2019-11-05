@@ -5,7 +5,7 @@ import runners
 
 PARAMS_FILE_ROOT = 'config/'
 
-def run(config_file='config.json'):
+def run(config_file='config_softmax.json'):
     # Load config json into dict
     config = None
     with open(os.path.join(PARAMS_FILE_ROOT, config_file)) as f:
@@ -17,7 +17,7 @@ def run(config_file='config.json'):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', dest='config_file', type=str, default='config_softmax.json')
+    parser.add_argument('--config_file', dest='config_file', type=str, default='config_softmax_belief.json')
     args = parser.parse_args()
     args = vars(args)
 

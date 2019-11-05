@@ -40,7 +40,6 @@ def save_json_file(path, data, mode="w"):
             os.makedirs(os.path.split(path)[0])
 
         json.dump(data, open(path, mode), indent=2)
-        print(f'saved data in {path}')
     except Exception as e:
         print(f'Error: Writing model fails: {path}')
         print(e)

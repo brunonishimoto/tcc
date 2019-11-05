@@ -1,4 +1,6 @@
 from .dqn_model import DQNModel
+from .drqn_model import DRQNModel
+from .drqn_model1 import DRQNModel1
 
 def load(config):
     cls_name = config["model"]["name"]

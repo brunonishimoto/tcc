@@ -1,4 +1,6 @@
 from .state_tracker import StateTracker
+from .belief_state_tracker import BeliefStateTracker
+from .belief_state_tracker_probs import BeliefStateTrackerProbs
 
 def load(config):
     cls_name = config["dst"]["name"]

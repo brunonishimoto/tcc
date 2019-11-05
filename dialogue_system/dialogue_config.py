@@ -21,10 +21,10 @@ usersim_required_init_inform_keys = ['moviename']
 #######################################
 
 # Possible inform and request slots for the agent
-agent_inform_slots = ['moviename', 'theater', 'starttime', 'date', 'genre', 'state', 'city', 'zip', 'critic_rating',
+agent_inform_slots = ['moviename', 'actress', 'theater', 'starttime', 'date', 'genre', 'state', 'city', 'zip', 'critic_rating',
                       'mpaa_rating', 'distanceconstraints', 'video_format', 'theater_chain', 'price', 'actor',
                       'description', 'other', 'numberofkids', usersim_default_key]
-agent_request_slots = ['moviename', 'theater', 'starttime', 'date', 'numberofpeople', 'genre', 'state', 'city', 'zip',
+agent_request_slots = ['moviename', 'actress', 'theater', 'starttime', 'date', 'numberofpeople', 'genre', 'state', 'city', 'zip',
                        'critic_rating', 'mpaa_rating', 'distanceconstraints', 'video_format', 'theater_chain', 'price',
                        'actor', 'description', 'other', 'numberofkids']
 
@@ -60,8 +60,10 @@ no_query_keys = ['numberofpeople', 'taskcomplete', 'greeting', 'closing', usersi
 # All possible intents (for one-hot conversion in ST.get_state())
 all_intents = ['greeting', 'inform', 'request', 'match_found', 'thanks', 'deny']
 
+user_intents = ['greeting', 'inform', 'request', 'thanks', 'deny']
+
 # All possible slots (for one-hot conversion in ST.get_state())
 all_slots = ['actor', 'actress', 'city', 'critic_rating', 'date', 'description', 'distanceconstraints',
-             'genre', 'greeting', 'implicit_value', 'movie_series', 'moviename', 'mpaa_rating',
-             'numberofpeople', 'numberofkids', 'other', 'price', 'seating', 'starttime', 'state',
-             'theater', 'theater_chain', 'video_format', 'zip', 'closing', usersim_default_key, 'mc_list']
+             'genre', 'greeting', 'moviename', 'mpaa_rating', 'numberofkids',
+             'numberofpeople', 'other', 'price', 'starttime', 'state',
+             'theater', 'theater_chain', 'video_format', 'zip', usersim_default_key]
