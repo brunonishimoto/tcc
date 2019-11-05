@@ -178,7 +178,7 @@ class DQNAgent:
             numpy.array
         """
 
-        return self._dqn_predict(state.reshape(1, self.state_size), target=target).flatten()
+        return self._dqn_predict(state.reshape(1, *self.state_size), target=target).flatten()
 
     def _dqn_predict(self, states, target=False):
         """
@@ -242,7 +242,7 @@ class DQNAgent:
             states = np.array([sample[0] for sample in batch])
             next_states = np.array([sample[3] for sample in batch])
 
-            assert states.shape == (self.batch_size, self.state_size), 'States Shape: {}'.format(states.shape)
+            assert states.shape == (self.batch_size, *self.state_size), 'States Shape: {}'.format(states.shape)
             assert next_states.shape == states.shape
 
             beh_state_preds = self._dqn_predict(states)  # For leveling error
@@ -251,7 +251,7 @@ class DQNAgent:
             else:
                 tar_next_state_preds = self._dqn_predict(next_states, target=True)  # For target value for DQN (& DDQN)
 
-            inputs = np.zeros((self.batch_size, self.state_size))
+            inputs = np.zeros((self.batch_size, *self.state_size))
             targets = np.zeros((self.batch_size, self.num_actions))
 
             for i, (s, a, r, s_, d) in enumerate(batch):
