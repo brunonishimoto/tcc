@@ -56,7 +56,7 @@ class BeliefStateTracker:
     def get_state_size(self):
         """Returns the state size of the state representation used by the agent."""
 
-        return (self.n_best + 1) * self.num_intents + (5 * self.n_best + 2) * self.num_slots + 2 * self.n_best + 1 + self.max_round_num
+        return (self.n_best, 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num)
 
     def reset(self):
         """Resets current_informs, history and round_num."""
@@ -119,53 +119,26 @@ class BeliefStateTracker:
         # Create bag of request slots representation to represent the current user action
         user_request_slots_rep = np.zeros((self.n_best, self.num_slots))
 
-        for i, action in enumerate(n_best_last_user_action):
-            user_act_rep[i][self.intents_dict[action[const.INTENT]]] = 1.0
-
-            for key in action[const.INFORM_SLOTS].keys():
-                user_inform_slots_rep[i][self.slots_dict[key]] = 1.0
-
-            for key in action[const.REQUEST_SLOTS].keys():
-                user_request_slots_rep[i][self.slots_dict[key]] = 1.0
-
-        user_act_rep = user_act_rep.flatten()
-        user_inform_slots_rep = user_inform_slots_rep.flatten()
-        user_request_slots_rep = user_request_slots_rep.flatten()
-
         # Create bag of filled_in slots based on the current_slots
         current_slots_rep = np.zeros((self.n_best, self.num_slots))
-        for i in range(self.n_best):
-            for key in self.current_informs[i]:
-                current_slots_rep[i][self.slots_dict[key]] = 1.0
-
-        current_slots_rep = current_slots_rep.flatten()
 
         # Representations that use agent action
         last_agent_action = self.history[-2] if len(self.history) > 1 else None
 
         # Encode last agent intent
-        agent_act_rep = np.zeros((self.num_intents,))
-        if last_agent_action:
-            agent_act_rep[self.intents_dict[last_agent_action[const.INTENT]]] = 1.0
+        agent_act_rep = np.zeros((self.n_best, self.num_intents))
 
         # Encode last agent inform slots
-        agent_inform_slots_rep = np.zeros((self.num_slots,))
-        if last_agent_action:
-            for key in last_agent_action[const.INFORM_SLOTS].keys():
-                agent_inform_slots_rep[self.slots_dict[key]] = 1.0
+        agent_inform_slots_rep = np.zeros((self.n_best, self.num_slots))
 
         # Encode last agent request slots
-        agent_request_slots_rep = np.zeros((self.num_slots,))
-        if last_agent_action:
-            for key in last_agent_action[const.REQUEST_SLOTS].keys():
-                agent_request_slots_rep[self.slots_dict[key]] = 1.0
+        agent_request_slots_rep = np.zeros((self.n_best, self.num_slots))
 
         # Value representation of the round num
-        turn_rep = np.zeros((1,)) + self.round_num / 5.
+        turn_rep = np.zeros((self.n_best, 1)) + self.round_num / 5.
 
         # One-hot representation of the round num
-        turn_onehot_rep = np.zeros((self.max_round_num,))
-        turn_onehot_rep[self.round_num - 1] = 1.0
+        turn_onehot_rep = np.zeros((self.n_best, self.max_round_num))
 
         # Representations that use db
         db_results_dict = []
@@ -177,6 +150,28 @@ class BeliefStateTracker:
         kb_binary_rep = np.zeros((self.n_best, self.num_slots + 1))
 
         for i in range(self.n_best):
+            user_act_rep[i][self.intents_dict[n_best_last_user_action[i][const.INTENT]]] = 1.0
+
+            for key in n_best_last_user_action[i][const.INFORM_SLOTS].keys():
+                user_inform_slots_rep[i][self.slots_dict[key]] = 1.0
+
+            for key in n_best_last_user_action[i][const.REQUEST_SLOTS].keys():
+                user_request_slots_rep[i][self.slots_dict[key]] = 1.0
+
+            for key in self.current_informs[i]:
+                current_slots_rep[i][self.slots_dict[key]] = 1.0
+
+            if last_agent_action:
+                agent_act_rep[i][self.intents_dict[last_agent_action[const.INTENT]]] = 1.0
+
+                for key in last_agent_action[const.INFORM_SLOTS].keys():
+                    agent_inform_slots_rep[i][self.slots_dict[key]] = 1.0
+
+                for key in last_agent_action[const.REQUEST_SLOTS].keys():
+                    agent_request_slots_rep[i][self.slots_dict[key]] = 1.0
+
+            turn_onehot_rep[i][self.round_num - 1] = 1.0
+
             db_results_dict.append(self.db_helper.get_db_results_for_slots(self.current_informs[i]))
 
             kb_count_rep[i] = db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] / 100.
@@ -189,16 +184,10 @@ class BeliefStateTracker:
                 if key in self.slots_dict:
                     kb_binary_rep[i][self.slots_dict[key]] = np.sum(db_results_dict[i][key] > 0.)
 
-        kb_count_rep = kb_count_rep.flatten()
-        kb_binary_rep = kb_binary_rep.flatten()
-
-        # print(f'{user_act_rep.shape}-{user_inform_slots_rep.shape}-{user_request_slots_rep.shape}-{agent_act_rep.shape}-{agent_inform_slots_rep.shape}-{agent_request_slots_rep.shape}-
-        #         {current_slots_rep.shape}-{turn_rep.shape}-{turn_onehot_rep.shape}-{kb_binary_rep.shape}-')
-
         state_representation = np.hstack(
             [user_act_rep, user_inform_slots_rep, user_request_slots_rep, agent_act_rep, agent_inform_slots_rep,
              agent_request_slots_rep, current_slots_rep, turn_rep, turn_onehot_rep, kb_binary_rep,
-             kb_count_rep]).flatten()
+             kb_count_rep])
 
         return state_representation
 
