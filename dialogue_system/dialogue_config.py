@@ -33,6 +33,7 @@ agent_actions = [
     {'intent': 'greeting', 'inform_slots': {}, 'request_slots': {}},
     {'intent': 'match_found', 'inform_slots': {}, 'request_slots': {}},
     {'intent': 'thanks', 'inform_slots': {}, 'request_slots': {}},
+    {'intent': 'closing', 'inform_slots': {}, 'request_slots': {}},
     # {'intent':"confirm_answer", 'inform_slots':{}, 'request_slots':{}},
     # {'intent':"confirm_question", 'inform_slots':{}, 'request_slots':{}},
     {'intent':"deny", 'inform_slots':{}, 'request_slots':{}},
@@ -58,9 +59,9 @@ no_query_keys = ['numberofpeople', 'taskcomplete', 'greeting', 'closing', usersi
 #######################################
 
 # All possible intents (for one-hot conversion in ST.get_state())
-all_intents = ['greeting', 'inform', 'request', 'match_found', 'thanks', 'deny']
+all_intents = ['greeting', 'inform', 'request', 'match_found', 'thanks', 'deny', 'closing']
 
-user_intents = ['greeting', 'inform', 'request', 'thanks', 'deny']
+user_intents = ['greeting', 'inform', 'request', 'thanks', 'deny', 'closing']
 
 # All possible slots (for one-hot conversion in ST.get_state())
 all_slots = ['actor', 'actress', 'city', 'critic_rating', 'date', 'description', 'distanceconstraints',
