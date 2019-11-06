@@ -155,7 +155,6 @@ class RuleBasedUserSimulator:
         # No UNK in agent action informs
         if const.TASK_COMPLETE_SLOT in agent_action[const.INFORM_SLOTS]:
             ticket = {self.default_key: agent_action[const.INFORM_SLOTS][self.default_key]}
-        if const.TASK_COMPLETE_SLOT in agent_action[const.INFORM_SLOTS]:
             agent_action[const.INTENT] = const.MATCH_FOUND
             agent_action[const.INFORM_SLOTS].pop(const.TASK_COMPLETE_SLOT, None)
             agent_action[const.INFORM_SLOTS].update(ticket)
@@ -169,6 +168,7 @@ class RuleBasedUserSimulator:
         # ----------------
 
         self.state[const.INFORM_SLOTS].clear()
+        self.state[const.REQUEST_SLOTS].clear()
         self.state[const.INTENT] = ''
 
         done = False
