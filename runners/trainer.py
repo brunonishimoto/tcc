@@ -1,9 +1,12 @@
+import pandas as pd
 import random
 import collections
 import logging
 import json
 import re
 import copy
+import time
+import os
 
 from dialogue_system import DialogueSystem
 from utils.util import save_json_file, log
@@ -170,5 +173,11 @@ class Trainer:
         return sigma
 
     def run(self):
+        df = pd.read_csv("time.csv")
+        t0 = time.time()
         self.__run_warmup()
+        t1 = time.time()
         self.__run_train()
+        t2 = time.time()
+        df = df.append({"model": self.performance_path.split('/')[1], "warmup": t1 - t0, "train": t2 - t1, "total": t2 - t0}, ignore_index=True)
+        df.to_csv("time.csv", index=False)
