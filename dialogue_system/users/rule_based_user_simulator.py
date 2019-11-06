@@ -168,7 +168,6 @@ class RuleBasedUserSimulator:
         # ----------------
 
         self.state[const.INFORM_SLOTS].clear()
-        self.state[const.REQUEST_SLOTS].clear()
         self.state[const.INTENT] = ''
 
         done = False
@@ -507,8 +506,8 @@ class RuleBasedUserSimulator:
         if self.constraint_check == const.FAILED_DIALOG:
             return const.FAILED_DIALOG
 
-        if not self.state[const.REST_SLOTS]:
-            assert not self.state[const.REQUEST_SLOTS]
+        # if not self.state[const.REST_SLOTS]:
+        #     assert not self.state[const.REQUEST_SLOTS]
         if self.state[const.REST_SLOTS]:
             return const.FAILED_DIALOG
 
