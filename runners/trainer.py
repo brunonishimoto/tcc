@@ -177,7 +177,7 @@ class Trainer:
         t0 = time.time()
         self.__run_warmup()
         t1 = time.time()
-        # self.__run_train()
+        self.__run_train()
         t2 = time.time()
         df = df.append({"model": self.performance_path.split('/')[1], "warmup": t1 - t0, "train": t2 - t1, "total": t2 - t0}, ignore_index=True)
         df.to_csv("time.csv", index=False)
