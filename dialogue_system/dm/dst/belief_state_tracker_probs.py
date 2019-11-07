@@ -56,7 +56,7 @@ class BeliefStateTrackerProbs:
     def get_state_size(self):
         """Returns the state size of the state representation used by the agent."""
 
-        return (self.n_best, 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num)
+        return (self.n_best, 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num + 1)
 
     def reset(self):
         """Resets current_informs, history and round_num."""
@@ -149,14 +149,17 @@ class BeliefStateTrackerProbs:
         # Representation of DB query results (binary)
         kb_binary_rep = np.zeros((self.n_best, self.num_slots + 1))
 
+        # Representation of probabilities
+        probs_rep = np.zeros((self.n_best, 1))
+
         for i in range(self.n_best):
-            user_act_rep[i][self.intents_dict[n_best_last_user_action[i]['action'][const.INTENT]]] = 1.0 * n_best_last_user_action[i]['prob']
+            user_act_rep[i][self.intents_dict[n_best_last_user_action[i]['action'][const.INTENT]]] = 1.0
 
             for key in n_best_last_user_action[i]['action'][const.INFORM_SLOTS].keys():
-                user_inform_slots_rep[i][self.slots_dict[key]] = 1.0 * n_best_last_user_action[i]['prob']
+                user_inform_slots_rep[i][self.slots_dict[key]] = 1.0
 
             for key in n_best_last_user_action[i]['action'][const.REQUEST_SLOTS].keys():
-                user_request_slots_rep[i][self.slots_dict[key]] = 1.0 * n_best_last_user_action[i]['prob']
+                user_request_slots_rep[i][self.slots_dict[key]] = 1.0
 
             for key in self.current_informs[i]:
                 current_slots_rep[i][self.slots_dict[key]] = 1.0 * self.current_informs[i][key]['prob']
@@ -188,10 +191,12 @@ class BeliefStateTrackerProbs:
                 if key in self.slots_dict:
                     kb_binary_rep[i][self.slots_dict[key]] = np.sum(db_results_dict[i][key] > 0.)
 
+            probs_rep[i] = n_best_last_user_action[i]['prob']
+
         state_representation = np.hstack(
             [user_act_rep, user_inform_slots_rep, user_request_slots_rep, agent_act_rep, agent_inform_slots_rep,
              agent_request_slots_rep, current_slots_rep, turn_rep, turn_onehot_rep, kb_binary_rep,
-             kb_count_rep])
+             kb_count_rep, probs_rep])
 
         return state_representation
 
@@ -240,7 +245,7 @@ class BeliefStateTrackerProbs:
             else:
                 agent_action[const.INFORM_SLOTS][self.match_key] = const.NO_MATCH
             for i in range(self.n_best):
-                self.current_informs[i][self.match_key] = {'value': agent_action[const.INFORM_SLOTS][self.match_key], 'prob': 1}
+                self.current_informs[i][self.match_key] = {'value': agent_action[const.INFORM_SLOTS][self.match_key], 'prob': 1.0}
         agent_action.update({const.ROUND: self.round_num, const.SPEAKER_TYPE: const.AGT_SPEAKER_VAL})
         self.history.append(agent_action)
 
