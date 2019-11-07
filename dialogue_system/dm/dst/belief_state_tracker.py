@@ -33,10 +33,10 @@ class BeliefStateTracker:
         self.movie_dict = pickle.load(open(dict_path, 'rb'), encoding='latin1')
 
         self.n_best = config['dst']['n_best']
-        self.error_rate = config['dst']['error_rate']
-        self.confuse_intent = config['dst']['confuse_intent']
-        self.confuse_slot = config['dst']['confuse_slot']
-        self.confuse_value = config['dst']['confuse_value']
+        self.intent_error_prob = config['dst']['intent_error_prob']
+        self.value_error_prob = config['dst']['value_error_prob']
+        self.slot_error_prob = config['dst']['slot_error_prob']
+        self.miss_error_prob = config['dst']['miss_error_prob']
 
         # Clean DB
         remove_empty_slots(database)
@@ -150,16 +150,17 @@ class BeliefStateTracker:
         kb_binary_rep = np.zeros((self.n_best, self.num_slots + 1))
 
         for i in range(self.n_best):
-            user_act_rep[i][self.intents_dict[n_best_last_user_action[i][const.INTENT]]] = 1.0
+            user_act_rep[i][self.intents_dict[n_best_last_user_action[i]['action'][const.INTENT]]] = 1.0 * n_best_last_user_action[i]['prob']
 
-            for key in n_best_last_user_action[i][const.INFORM_SLOTS].keys():
-                user_inform_slots_rep[i][self.slots_dict[key]] = 1.0
+            for key in n_best_last_user_action[i]['action'][const.INFORM_SLOTS].keys():
+                user_inform_slots_rep[i][self.slots_dict[key]] = 1.0 * n_best_last_user_action[i]['prob']
 
-            for key in n_best_last_user_action[i][const.REQUEST_SLOTS].keys():
-                user_request_slots_rep[i][self.slots_dict[key]] = 1.0
+            for key in n_best_last_user_action[i]['action'][const.REQUEST_SLOTS].keys():
+                user_request_slots_rep[i][self.slots_dict[key]] = 1.0 * n_best_last_user_action[i]['prob']
+
 
             for key in self.current_informs[i]:
-                current_slots_rep[i][self.slots_dict[key]] = 1.0
+                current_slots_rep[i][self.slots_dict[key]] = 1.0 * self.current_informs[i][key]['prob']
 
             if last_agent_action:
                 agent_act_rep[i][self.intents_dict[last_agent_action[const.INTENT]]] = 1.0
@@ -172,7 +173,11 @@ class BeliefStateTracker:
 
             turn_onehot_rep[i][self.round_num - 1] = 1.0
 
-            db_results_dict.append(self.db_helper.get_db_results_for_slots(self.current_informs[i]))
+            constraints = {}
+            for k in self.current_informs[i]:
+                constraints[k] = self.current_informs[i][k]['value']
+
+            db_results_dict.append(self.db_helper.get_db_results_for_slots(constraints))
 
             kb_count_rep[i] = db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] / 100.
             for key in db_results_dict[i].keys():
@@ -206,18 +211,27 @@ class BeliefStateTracker:
 
         if agent_action[const.INTENT] == const.INFORM:
             assert agent_action[const.INFORM_SLOTS]
-            inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], self.current_informs[0])
+
+            constraints = {}
+            for k in self.current_informs[0]:
+                constraints[k] = self.current_informs[0][k]['value']
+
+            inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], constraints)
             agent_action[const.INFORM_SLOTS] = inform_slots
             assert agent_action[const.INFORM_SLOTS]
             for key, value in list(agent_action[const.INFORM_SLOTS].items()):
                 assert key != const.MATCH_FOUND
                 assert value != const.PLACEHOLDER, 'KEY: {}'.format(key)
                 for i in range(self.n_best):
-                    self.current_informs[i][key] = value
+                    self.current_informs[i][key] = {'value': value, 'prob': 1.0}
         # If intent is match_found then fill the action informs with the matches informs (if there is a match)
         elif agent_action[const.INTENT] == const.MATCH_FOUND:
             assert not agent_action[const.INFORM_SLOTS], 'Cannot inform and have intent of match found!'
-            db_results = self.db_helper.get_db_results(self.current_informs[0])
+            constraints = {}
+            for k in self.current_informs[0]:
+                constraints[k] = self.current_informs[0][k]['value']
+
+            db_results = self.db_helper.get_db_results(constraints)
             if db_results:
                 # Arbitrarily pick the first value of the dict
                 key, value = list(db_results.items())[0]
@@ -226,7 +240,7 @@ class BeliefStateTracker:
             else:
                 agent_action[const.INFORM_SLOTS][self.match_key] = const.NO_MATCH
             for i in range(self.n_best):
-                self.current_informs[i][self.match_key] = agent_action[const.INFORM_SLOTS][self.match_key]
+                self.current_informs[i][self.match_key] = {'value': agent_action[const.INFORM_SLOTS][self.match_key], 'prob': 1.0}
         agent_action.update({const.ROUND: self.round_num, const.SPEAKER_TYPE: const.AGT_SPEAKER_VAL})
         self.history.append(agent_action)
 
@@ -245,8 +259,8 @@ class BeliefStateTracker:
 
         n_best_actions = self.__generate_noise_user_actions(user_action)
         for idx, action in enumerate(n_best_actions):
-            for key, value in action[const.INFORM_SLOTS].items():
-                self.current_informs[idx][key] = value
+            for key, value in action['action'][const.INFORM_SLOTS].items():
+                self.current_informs[idx][key] = {'value': value, 'prob': action['prob']}
         user_action.update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
         self.history.append(n_best_actions)
         self.round_num += 1
@@ -257,80 +271,101 @@ class BeliefStateTracker:
         request_slots = user_action[const.REQUEST_SLOTS]
 
         n_best_confused_actions = []
-        n_best_confused_actions.append(user_action)
+        n_best_confused_actions.append({'action': user_action, 'prob': 1.0})
         for i in range(1, self.n_best):
-            # if random.random() < self.error_rate:
-            # Create a wrong user action
-            n_best_confused_actions.append(self.__create_wrong_action(user_action))
-            # else:
-            #     n_best_confused_actions.append(user_action)
+            n_best_confused_actions.append({'action': self.__create_wrong_action(user_action), 'prob': 1.0})
 
         return n_best_confused_actions
 
     def __create_wrong_action(self, user_action):
-        # 0 - intent error; 1 - slot error; 2 - value error
-        choice = np.random.choice([0, 1, 2], p=[self.confuse_intent, self.confuse_slot, self.confuse_value])
-
         action = copy.deepcopy(user_action)
 
-        if choice == 0:
-            # Error on intent
-            possible_intents = copy.copy(cfg.user_intents)
-            possible_intents.remove(action[const.INTENT])
-            if action[const.INTENT] != const.THANKS:
-                possible_intents.remove(const.THANKS)
+        inform_slots = copy.deepcopy(list(action[const.INFORM_SLOTS]))
+        request_slots = copy.deepcopy(list(action[const.REQUEST_SLOTS]))
 
-            action[const.INTENT] = np.random.choice(possible_intents)
-
-            possible_slots = copy.copy(cfg.all_slots)
-            possible_slots.remove(cfg.usersim_default_key)
-            if action[const.INTENT] == const.INFORM:
-                # Sample a random slot-value pair
-                slot = np.random.choice(possible_slots)
-                action[const.INFORM_SLOTS][slot] = np.random.choice(self.movie_dict[slot])
-            elif action[const.INTENT] == const.REQUEST:
-                # Sample a random slot to request
-                slot = np.random.choice(possible_slots)
-                action[const.REQUEST_SLOTS][slot] = const.UNKNOWN
+        if inform_slots and request_slots:
+            if np.random.random() < 0.7:
+                action = self.__confuse_inform(action)
             else:
-                action[const.INFORM_SLOTS] = {}
-                action[const.REQUEST_SLOTS] = {}
-        elif choice == 1:
-            # Error on slot
-            inform_slots = copy.deepcopy(list(action[const.INFORM_SLOTS]))
-            request_slots = copy.deepcopy(list(action[const.REQUEST_SLOTS]))
-            if inform_slots and request_slots:
-                if np.random.random() < 0.5:
-                    action = self.__confuse_inform(action)
-                else:
-                    action = self.__confuse_request(action)
-            elif inform_slots:
-                    action = self.__confuse_inform(action)
-            elif request_slots:
-                    action = self.__confuse_request(action)
-        elif choice == 2:
-            # Error on value
-            if list(action[const.INFORM_SLOTS]):
-                slot = np.random.choice(list(action[const.INFORM_SLOTS]))
-                action[const.INFORM_SLOTS][slot] = np.random.choice(self.movie_dict[slot])
+                action = self.__confuse_request(action)
+        elif inform_slots:
+                action = self.__confuse_inform(action)
+        elif request_slots:
+                action = self.__confuse_request(action)
+        else:
+            action = self.__confuse_intent(action)
+
+        # Confuse intent with the probability
+        if np.random.random() < self.intent_error_prob:
+            action = self.__confuse_intent(action)
 
         return action
 
+    def __confuse_intent(self, action):
+        # Error on intent
+        possible_intents = copy.copy(cfg.user_intents)
+        possible_intents.remove(action[const.INTENT])
+        # if action[const.INTENT] != const.THANKS:
+        #     possible_intents.remove(const.THANKS)
+
+        # action[const.INTENT] = np.random.choice(possible_intents)
+
+        # possible_slots = copy.copy(cfg.all_slots)
+        # possible_slots.remove(cfg.usersim_default_key)
+        # if action[const.INTENT] == const.INFORM:
+        #     # Sample a random slot-value pair
+        #     slot = np.random.choice(possible_slots)
+        #     action[const.INFORM_SLOTS][slot] = np.random.choice(self.movie_dict[slot])
+        # elif action[const.INTENT] == const.REQUEST:
+        #     # Sample a random slot to request
+        #     slot = np.random.choice(possible_slots)
+        #     action[const.REQUEST_SLOTS][slot] = const.UNKNOWN
+        # else:
+        #     action[const.INFORM_SLOTS] = {}
+        #     action[const.REQUEST_SLOTS] = {}
+        action[const.INTENT] = np.random.choice(possible_intents)
+        return action
+
     def __confuse_inform(self, action):
-        # Change a inform slot
-        possible_slots = copy.copy(cfg.all_slots)
+        # 0 - only value, 1 - slot and value, 2 - add a random slot and value
+        choice = np.random.choice([0, 1, 2], p=[self.value_error_prob, self.slot_error_prob, self.miss_error_prob])
 
-        # Choose and remove the slot to be changed
-        slot = np.random.choice(list(action[const.INFORM_SLOTS]))
-        action[const.INFORM_SLOTS].pop(slot)
+        if choice == 0:
+            # Choose the slot to be changed
+            slot = np.random.choice(list(action[const.INFORM_SLOTS]))
+            new_value = np.random.choice(self.movie_dict[slot])
+            action[const.INFORM_SLOTS][slot] = new_value
+        elif choice == 1:
+            # Change a inform slot
+            possible_slots = copy.copy(cfg.all_slots)
 
-        possible_slots.remove(slot)
-        possible_slots.remove(cfg.usersim_default_key)
+            # Choose and remove the slot to be changed
+            slot = np.random.choice(list(action[const.INFORM_SLOTS]))
+            action[const.INFORM_SLOTS].pop(slot)
 
-        # Select a new slot and its value
-        new_slot = np.random.choice(possible_slots)
-        new_value = np.random.choice(self.movie_dict[new_slot])
-        action[const.INFORM_SLOTS][new_slot] = new_value
+            possible_slots.remove(slot)
+            if cfg.usersim_default_key in possible_slots:
+                possible_slots.remove(cfg.usersim_default_key)
+
+            # Select a new slot and its value
+            new_slot = np.random.choice(possible_slots)
+            new_value = np.random.choice(self.movie_dict[new_slot])
+            action[const.INFORM_SLOTS][new_slot] = new_value
+        elif choice == 2:
+            # Add a random slot-value pair
+            possible_slots = copy.copy(cfg.all_slots)
+
+            # remove from possible slots the ones in it
+            for slot in list(action[const.INFORM_SLOTS]):
+                possible_slots.remove(slot)
+
+            if cfg.usersim_default_key in possible_slots:
+                possible_slots.remove(cfg.usersim_default_key)
+
+            # Select a new slot and its value
+            new_slot = np.random.choice(possible_slots)
+            new_value = np.random.choice(self.movie_dict[new_slot])
+            action[const.INFORM_SLOTS][new_slot] = new_value
 
         return action
 

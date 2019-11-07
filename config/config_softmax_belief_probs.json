@@ -29,10 +29,10 @@
   "dst": {
     "name": "BeliefStateTrackerProbs",
     "n_best": 5,
-    "error_rate": 0.2,
-    "confuse_intent": 0.2,
-    "confuse_slot": 0.3,
-    "confuse_value": 0.5
+    "value_error_prob": 0.4,
+    "slot_error_prob": 0.3,
+    "miss_error_prob": 0.3,
+    "intent_error_prob": 0.1
   },
   "agent": {
     "name": "DQNSoftmax",
@@ -71,8 +71,8 @@
     "beam_size": 10
   },
   "emc": {
-    "slot_error_mode": 0,
-    "slot_error_prob": 0.0,
-    "intent_error_prob": 0.0
+    "slot_error_mode": 3,
+    "slot_error_prob": 0.1,
+    "intent_error_prob": 0.05
   }
 }

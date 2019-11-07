@@ -49,7 +49,7 @@ class DialogueSystem:
             # 4) Infuse error into semantic frame level of user action
             if self.use_nl and not self.real_user:
                 user_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'usr')
-            user_action = self.__transform_action(user_action)
+            user_action = self.__transform_action(user_action, infuse_error=True)
             log(['debug', 'dialogue'], f'User: {user_action}')
 
         # 5) Update state tracker with user action
@@ -79,7 +79,7 @@ class DialogueSystem:
         if self.use_nl and not self.real_user:
             user_action['nl'] = self.nlg.convert_diaact_to_nl(user_action, 'usr')
         # if nl transform in frame, if frame use emc
-        user_action = self.__transform_action(user_action)
+        user_action = self.__transform_action(user_action, infuse_error=True)
         log(['dialogue'], f'User: {user_action}')
         # And update state tracker
         self.state_tracker.update_state_user(user_action)
@@ -88,9 +88,9 @@ class DialogueSystem:
         self.agent.reset()
 
     # TODO: think in a better name for this function
-    def __transform_action(self, action):
+    def __transform_action(self, action, infuse_error=False):
         if self.use_nl:
             action.update(self.nlu.generate_dia_act(action['nl']))
-        else:
+        elif infuse_error:
             action = self.emc.infuse_error(action)
         return action

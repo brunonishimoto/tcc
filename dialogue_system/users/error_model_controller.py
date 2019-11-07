@@ -1,5 +1,6 @@
 import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
+import numpy as np
 import random
 import pickle
 
@@ -53,12 +54,12 @@ class ErrorModelController:
                     elif self.slot_error_mode == 2:  # delete the slot
                         self.__slot_remove(key, informs_dict)
                     else:  # Combine all three
-                        rand_choice = random.random()
-                        if rand_choice <= 0.33:
+                        choice = np.random.choice([0, 1, 2], p=[0.3, 0.3, 0.4])
+                        if choice == 0:
                             self.__slot_value_noise(key, informs_dict)
-                        elif rand_choice > 0.33 and rand_choice <= 0.66:
+                        elif choice == 1:
                             self.__slot_noise(key, informs_dict)
-                        else:
+                        elif choice == 2:
                             self.__slot_remove(key, informs_dict)
             if random.random() < self.intent_error_prob:  # add noise for intent level
                 frame[const.INTENT] = random.choice(self.intents)
@@ -87,7 +88,7 @@ class ErrorModelController:
         """
 
         informs_dict.pop(key)
-        random_slot = random.choice(list(self.movie_dict.keys()))
+        random_slot = random.choice(list(cfg.all_slots))
         informs_dict[random_slot] = random.choice(self.movie_dict[random_slot])
 
     def __slot_remove(self, key, informs_dict):
