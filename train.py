@@ -14,11 +14,18 @@ for file in os.listdir(ROOT):
         if file == 'config_softmax_belief_drqn.json' or file == "config_softmax_belief_drqn1.json":
             CONFIG_FILE_PATH.append(os.path.join(ROOT, file))
 
-print(CONFIG_FILE_PATH)
+paths = []
+for file in CONFIG_FILE_PATH:
+    for i in range(3):
+        paths.append(f'{file}-{i}')
+
+print(paths)
+
 def train_model(path):
-    for run in range(3):
+        # for run in range(3):
         # for path in CONFIG_FILE_PATH:
-        print(path)
+        path, run = path.split('-', 2)
+
         config = {}
         with open(path) as f:
             config = json.load(f)
@@ -33,6 +40,6 @@ def train_model(path):
         trainer.run()
 
 pool = mp.Pool(mp.cpu_count())
-pool.map_async(train_model, CONFIG_FILE_PATH)
+pool.map_async(train_model, paths)
 pool.close()
 pool.join()
