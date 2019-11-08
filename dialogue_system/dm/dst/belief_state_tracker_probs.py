@@ -197,6 +197,12 @@ class BeliefStateTrackerProbs:
             # masked_kb_count = np.ma.compressed(np.ma.masked_where(self.current_informs[i] > 0, kb_count_rep[i]))
             probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, int(self.get_state_size()[1] / self.n_best))[i, -1] * \
                             (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) / self.last_kb_all_matching[i]
+            
+            if not probs_rep[i]:
+                probs_rep[i] = n_best_last_user_action[i]['prob'] * (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) / self.last_kb_all_matching[i]
+
+            if not probs_rep[i]:
+                probs_rep[i] = n_best_last_user_action[i]['prob']
 
             self.last_kb_all_matching[i] = db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1
 
@@ -251,7 +257,7 @@ class BeliefStateTrackerProbs:
             assert not agent_action[const.INFORM_SLOTS], 'Cannot inform and have intent of match found!'
 
             state_size = 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num + 1
-            choice = np.random.choice(range(self.n_best), self.history_states[-1].reshape(self.n_best, state_size)[:, -1])
+            choice = np.random.choice(range(self.n_best), p=self.history_states[-1].reshape(self.n_best, state_size)[:, -1])
             constraints = {}
             for k in self.current_informs[choice]:
                 constraints[k] = self.current_informs[choice][k]['value']
