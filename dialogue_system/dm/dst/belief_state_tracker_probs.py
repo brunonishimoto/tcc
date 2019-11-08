@@ -193,7 +193,8 @@ class BeliefStateTrackerProbs:
                 if key in self.slots_dict:
                     kb_binary_rep[i][self.slots_dict[key]] = np.sum(db_results_dict[i][key] > 0.)
 
-            probs_rep[i] = n_best_last_user_action[i]['prob']
+            masked_kb_count = np.ma.compressed(np.ma.masked_where(self.current_informs[i] > 0, kb_count_rep[i]))
+            probs_rep[i] = n_best_last_user_action[i]['prob'] *
 
         state_representation = np.hstack(
             [user_act_rep, user_inform_slots_rep, user_request_slots_rep, agent_act_rep, agent_inform_slots_rep,
