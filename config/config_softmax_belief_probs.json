@@ -29,6 +29,7 @@
   "dst": {
     "name": "BeliefStateTrackerProbs",
     "n_best": 5,
+    "num_sequences": 2,
     "value_error_prob": 0.4,
     "slot_error_prob": 0.3,
     "miss_error_prob": 0.3,
@@ -72,7 +73,7 @@
   },
   "emc": {
     "slot_error_mode": 3,
-    "slot_error_prob": 0,
-    "intent_error_prob": 0
+    "slot_error_prob": 0.2,
+    "intent_error_prob": 0.1
   }
 }

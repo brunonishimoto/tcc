@@ -66,8 +66,8 @@
     "beam_size": 10
   },
   "emc": {
-    "slot_error_mode": 0,
-    "slot_error_prob": 0.0,
-    "intent_error_prob": 0.0
+    "slot_error_mode": 3,
+    "slot_error_prob": 0.2,
+    "intent_error_prob": 0.1
   }
 }

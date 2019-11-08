@@ -33,6 +33,7 @@ class BeliefStateTracker:
         self.movie_dict = pickle.load(open(dict_path, 'rb'), encoding='latin1')
 
         self.n_best = config['dst']['n_best']
+        self.num_sequences = config['dst']['num_sequences']
         self.intent_error_prob = config['dst']['intent_error_prob']
         self.value_error_prob = config['dst']['value_error_prob']
         self.slot_error_prob = config['dst']['slot_error_prob']
@@ -56,7 +57,7 @@ class BeliefStateTracker:
     def get_state_size(self):
         """Returns the state size of the state representation used by the agent."""
 
-        return (self.n_best, 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num + 1)
+        return (self.num_sequences, self.n_best * (2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num + 1))
 
     def reset(self):
         """Resets current_informs, history and round_num."""
@@ -67,6 +68,7 @@ class BeliefStateTracker:
             self.current_informs.append({})
         # A list of the dialogues (dicts) by the agent and user so far in the conversation
         self.round_num = 0
+        self.history_states = np.zeros(self.get_state_size())
 
     def print_history(self):
         """Helper function if you want to see the current history action by action."""
@@ -197,9 +199,11 @@ class BeliefStateTracker:
         state_representation = np.hstack(
             [user_act_rep, user_inform_slots_rep, user_request_slots_rep, agent_act_rep, agent_inform_slots_rep,
              agent_request_slots_rep, current_slots_rep, turn_rep, turn_onehot_rep, kb_binary_rep,
-             kb_count_rep, probs_rep])
+             kb_count_rep, probs_rep]).flatten()
 
-        return state_representation
+        self.history_states = np.roll(self.history_states, -1, axis=0)
+        self.history_states[-1] = state_representation
+        return self.history_states
 
     def update_state_agent(self, agent_action):
         """
