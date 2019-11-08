@@ -69,6 +69,7 @@ class BeliefStateTrackerProbs:
         # A list of the dialogues (dicts) by the agent and user so far in the conversation
         self.round_num = 0
         self.history_states = np.zeros(self.get_state_size())
+        self.last_kb_all_matching = np.ones((self.n_best))
 
     def print_history(self):
         """Helper function if you want to see the current history action by action."""
@@ -193,14 +194,21 @@ class BeliefStateTrackerProbs:
                 if key in self.slots_dict:
                     kb_binary_rep[i][self.slots_dict[key]] = np.sum(db_results_dict[i][key] > 0.)
 
-            masked_kb_count = np.ma.compressed(np.ma.masked_where(self.current_informs[i] > 0, kb_count_rep[i]))
-            probs_rep[i] = n_best_last_user_action[i]['prob'] *
+            # masked_kb_count = np.ma.compressed(np.ma.masked_where(self.current_informs[i] > 0, kb_count_rep[i]))
+            probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, int(self.get_state_size()[1] / self.n_best))[i, -1] * \
+                            (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) / self.last_kb_all_matching[i]
+
+            self.last_kb_all_matching[i] = db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1
+
+        # Normalize probs representation to sum to one
+        probs_rep = probs_rep / np.sum(probs_rep)
 
         state_representation = np.hstack(
             [user_act_rep, user_inform_slots_rep, user_request_slots_rep, agent_act_rep, agent_inform_slots_rep,
              agent_request_slots_rep, current_slots_rep, turn_rep, turn_onehot_rep, kb_binary_rep,
              kb_count_rep, probs_rep]).flatten()
 
+        
         self.history_states = np.roll(self.history_states, -1, axis=0)
         self.history_states[-1] = state_representation
         return self.history_states
@@ -221,9 +229,14 @@ class BeliefStateTrackerProbs:
         if agent_action[const.INTENT] == const.INFORM:
             assert agent_action[const.INFORM_SLOTS]
 
+            state_size = 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num + 1
+            p = self.history_states[-1].reshape(self.n_best, state_size)[:, -1]
+            if not np.all(p):
+                p = [1 / self.n_best] * self.n_best
+            choice = np.random.choice(range(self.n_best), p=self.history_states[-1].reshape(self.n_best, state_size)[:, -1])
             constraints = {}
-            for k in self.current_informs[0]:
-                constraints[k] = self.current_informs[0][k]['value']
+            for k in self.current_informs[choice]:
+                constraints[k] = self.current_informs[choice][k]['value']
 
             inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], constraints)
             agent_action[const.INFORM_SLOTS] = inform_slots
@@ -237,9 +250,11 @@ class BeliefStateTrackerProbs:
         elif agent_action[const.INTENT] == const.MATCH_FOUND:
             assert not agent_action[const.INFORM_SLOTS], 'Cannot inform and have intent of match found!'
 
+            state_size = 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num + 1
+            choice = np.random.choice(range(self.n_best), self.history_states[-1].reshape(self.n_best, state_size)[:, -1])
             constraints = {}
-            for k in self.current_informs[0]:
-                constraints[k] = self.current_informs[0][k]['value']
+            for k in self.current_informs[choice]:
+                constraints[k] = self.current_informs[choice][k]['value']
 
             db_results = self.db_helper.get_db_results(constraints)
             if db_results:
@@ -271,7 +286,10 @@ class BeliefStateTrackerProbs:
         for idx, action in enumerate(n_best_actions):
             for key, value in action['action'][const.INFORM_SLOTS].items():
                 self.current_informs[idx][key] = {'value': value, 'prob': action['prob']}
-        user_action.update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
+
+        for action in n_best_actions:
+            action.update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
+
         self.history.append(n_best_actions)
         self.round_num += 1
 
@@ -281,9 +299,9 @@ class BeliefStateTrackerProbs:
         request_slots = user_action[const.REQUEST_SLOTS]
 
         n_best_confused_actions = []
-        n_best_confused_actions.append({'action': user_action, 'prob': 1 / self.n_best})
+        n_best_confused_actions.append({'action': user_action, 'prob': 0.6})
         for i in range(1, self.n_best):
-            n_best_confused_actions.append({'action': self.__create_wrong_action(user_action), 'prob': 1 / self.n_best})
+            n_best_confused_actions.append({'action': self.__create_wrong_action(user_action), 'prob': 0.4 / (self.n_best - 1)})
 
         return n_best_confused_actions
 
