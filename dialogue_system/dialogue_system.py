@@ -29,6 +29,10 @@ class DialogueSystem:
 
         self.use_nl = config['use_nl']
         self.real_user = config['real_user']
+        self.recurrent = config['recurrent']
+
+        if self.recurrent:
+            self.episode_experience = []
         self.state = None
 
     def run_round(self, step=None, use_rule=False, train=True):
@@ -59,7 +63,13 @@ class DialogueSystem:
         next_state = self.state_tracker.get_state(done)
 
         if train:
-            self.agent.add_experience(self.state, agent_action_index, reward, next_state, done)
+            if self.recurrent:
+                self.episode_experience.append((self.state, agent_action_index, reward, next_state, done))
+                if done:
+                    self.agent.add_experience(self.episode_experience)
+                    self.episode_experience = []
+            else:
+                self.agent.add_experience(self.state, agent_action_index, reward, next_state, done)
 
         # Update the dialogue state
         self.state = next_state
@@ -85,6 +95,7 @@ class DialogueSystem:
         self.state_tracker.update_state_user(user_action)
         self.state = self.state_tracker.get_state()
         # Finally, reset agent
+        self.episode_experience = []
         self.agent.reset()
 
     # TODO: think in a better name for this function
