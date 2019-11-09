@@ -42,6 +42,7 @@ class DRQNAgent:
         if self.save_weights_file_path and not os.path.exists(os.path.split(self.save_weights_file_path)[0]):
             os.makedirs(os.path.split(self.save_weights_file_path)[0])
 
+        self.len_mem = 0
         if self.max_memory_size < self.batch_size:
             raise ValueError('Max memory size must be at least as great as batch size!')
 
@@ -72,7 +73,6 @@ class DRQNAgent:
         self.rule_current_inform_slot_index = 0
         self.first_turn = True
         self.rule_phase = const.NOT_DONE
-        self.len_mem = 0
 
     def get_action(self, state, step=None, use_rule=False, train=True):
         # Implemented in child classes
