@@ -72,6 +72,7 @@ class DRQNAgent:
         self.rule_current_inform_slot_index = 0
         self.first_turn = True
         self.rule_phase = const.NOT_DONE
+        self.len_mem = 0
 
     def get_action(self, state, step=None, use_rule=False, train=True):
         # Implemented in child classes
@@ -213,6 +214,7 @@ class DRQNAgent:
             self.memory.append(None)
         self.memory[self.memory_index] = episode
         self.memory_index = (self.memory_index + 1) % self.max_memory_size
+        self.len_mem += len(episode)
 
     def empty_memory(self):
         """Empties the memory and resets the memory index."""
@@ -223,7 +225,7 @@ class DRQNAgent:
     def is_memory_full(self):
         """Returns true if the memory is full."""
 
-        return len(self.memory) == self.max_memory_size
+        return self.len_mem >= self.max_memory_size
 
     def train(self):
         """
