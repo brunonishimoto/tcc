@@ -244,7 +244,26 @@ class BeliefStateTracker:
         elif agent_action[const.INTENT] == const.MATCH_FOUND:
             assert not agent_action[const.INFORM_SLOTS], 'Cannot inform and have intent of match found!'
 
-            db_results = self.db_helper.get_db_results(self.current_informs[0])
+            possible_results = []
+            weight = 0
+            for constraints in self.current_informs:
+                result = self.db_helper.get_db_results(constraints)
+                possible_results.append(result)
+                if len(result) > 0:
+                    weight += 1
+
+            probs = []
+            for result in possible_results:
+                if len(result) > 0:
+                    probs.append(1 / weight)
+                else:
+                    probs.append(0)
+
+            if np.array(probs).sum() == 0:
+                probs = [1 / 5] * 5
+
+            db_results = np.random.choice(possible_results, p=probs)
+
             if db_results:
                 # Arbitrarily pick the first value of the dict
                 key, value = list(db_results.items())[0]
