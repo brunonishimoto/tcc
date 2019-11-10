@@ -259,6 +259,7 @@ class DRQNAgent:
             traces = []
             for episode in batch:
                 while len(episode) < self.trace_length:
+                    # If the episode is lower than the trace_length add 0's experience to complete
                     episode.append((np.zeros(batch[0][0][0].shape), 0, 0, np.zeros(batch[0][0][0].shape), 0))
                 start_point = np.random.randint(0, len(episode) + 1 - self.trace_length)
                 traces.append(episode[start_point:start_point + self.trace_length])

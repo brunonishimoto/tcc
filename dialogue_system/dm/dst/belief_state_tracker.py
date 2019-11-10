@@ -213,9 +213,27 @@ class BeliefStateTracker:
         if agent_action[const.INTENT] == const.INFORM:
             assert agent_action[const.INFORM_SLOTS]
 
+            slot = list(agent_action[const.INFORM_SLOTS].keys())[0]
+            possible_informs = []
+            weight = 0
+            for constraints in self.current_informs:
+                result = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], constraints)
+                possible_informs.append(result)
+                if result[slot] == const.NO_MATCH:
+                    weight += 1
+                else:
+                    weight += 2
 
-            inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], self.current_informs[0])
-            agent_action[const.INFORM_SLOTS] = inform_slots
+            probs = []
+            for inform in possible_informs:
+                if inform[slot] == const.NO_MATCH:
+                    probs.append(1 / weight)
+                else:
+                    probs.append(2 / weight)
+
+
+            # inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], self.current_informs[0])
+            agent_action[const.INFORM_SLOTS] = np.random.choice(possible_informs, p=probs)
             assert agent_action[const.INFORM_SLOTS]
             for key, value in list(agent_action[const.INFORM_SLOTS].items()):
                 assert key != const.MATCH_FOUND
