@@ -43,7 +43,6 @@ class DRQNAgent:
         if self.save_weights_file_path and not os.path.exists(os.path.split(self.save_weights_file_path)[0]):
             os.makedirs(os.path.split(self.save_weights_file_path)[0])
 
-        self.len_mem = 0
         if self.max_memory_size < self.batch_size:
             raise ValueError('Max memory size must be at least as great as batch size!')
 
@@ -233,7 +232,6 @@ class DRQNAgent:
             self.memory.append(None)
         self.memory[self.memory_index] = episode
         self.memory_index = (self.memory_index + 1) % self.max_memory_size
-        self.len_mem += len(episode)
 
     def empty_memory(self):
         """Empties the memory and resets the memory index."""
@@ -244,7 +242,7 @@ class DRQNAgent:
     def is_memory_full(self):
         """Returns true if the memory is full."""
 
-        return self.len_mem >= self.max_memory_size
+        return len(self.memory) >= self.max_memory_size
 
     def train(self):
         """

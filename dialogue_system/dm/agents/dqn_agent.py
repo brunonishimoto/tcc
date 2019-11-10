@@ -54,7 +54,7 @@ class DQNAgent:
 
         self.reset()
 
-    def build_models(self, state_size):
+    def build_models(self, state_size, db_size=None):
         self.state_size = state_size
         self.C['model']['input_dim'] = state_size
         self.C['model']['output_dim'] = self.num_actions

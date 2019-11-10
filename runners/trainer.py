@@ -62,7 +62,7 @@ class Trainer:
 
         total_step = 0
         episode = 0
-        while total_step <= self.warmup_mem and not self.dialogue_system.agent.is_memory_full():
+        while not self.dialogue_system.agent.is_memory_full():
             # Reset episode
             self.dialogue_system.reset(episode)
             done = False
