@@ -39,6 +39,8 @@ class BeliefStateTrackerProbs:
         self.slot_error_prob = config['dst']['slot_error_prob']
         self.miss_error_prob = config['dst']['miss_error_prob']
 
+        self.error_prob = config['emc']['slot_error_prob']
+
         # Clean DB
         remove_empty_slots(database)
 
@@ -309,9 +311,9 @@ class BeliefStateTrackerProbs:
         request_slots = user_action[const.REQUEST_SLOTS]
 
         n_best_confused_actions = []
-        n_best_confused_actions.append({'action': user_action, 'prob': 0.6})
+        n_best_confused_actions.append({'action': user_action, 'prob': 1 - self.error_prob})
         for i in range(1, self.n_best):
-            n_best_confused_actions.append({'action': self.__create_wrong_action(user_action), 'prob': 0.4 / (self.n_best - 1)})
+            n_best_confused_actions.append({'action': self.__create_wrong_action(user_action), 'prob': self.slot_error_prob / (self.n_best - 1)})
 
         return n_best_confused_actions
 
