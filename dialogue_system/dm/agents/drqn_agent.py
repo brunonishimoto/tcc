@@ -198,9 +198,12 @@ class DRQNAgent:
             if not self.db_attention:
                 return self.tar_model.predict(states)
             else:
-                observation = states[0][:, :-2]
+                reshaped = np.reshape(states[0], (self.state_size[0], *(5, self.state_size[1] // 5)))
+                observation = reshaped[:, :, :-(self.db_size[1] // 5)]
+                observation = observation.reshape((observation.shape[0], observation.shape[1] * observation.shape[2]))
                 observation = observation.reshape(1, *observation.shape)
-                db_input = states[0][:, -2:]
+                db_input = reshaped[:, :, -(self.db_size[1] // 5):]
+                db_input = db_input.reshape((db_input.shape[0], db_input.shape[1] * db_input.shape[2]))
                 db_input = db_input.reshape(1, *db_input.shape)
                 return self.tar_model.predict([observation, db_input])
         else:
