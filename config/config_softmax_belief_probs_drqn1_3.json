@@ -48,9 +48,9 @@
     "gamma": 0.9,
     "max_mem_size": 3000,
     "trace_length": 5,
-    "db_attention": false,
+    "db_attention": true,
     "model": {
-      "name": "DRQNModel",
+      "name": "DRQNModel1",
       "dqn_hidden_size": 80,
       "activation": "relu",
       "activation_out": "linear",
