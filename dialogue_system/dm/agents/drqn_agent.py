@@ -198,25 +198,21 @@ class DRQNAgent:
             if not self.db_attention:
                 return self.tar_model.predict(states)
             else:
-                reshaped = np.reshape(states[0], (self.state_size[0], *(5, self.state_size[1] // 5)))
-                observation = reshaped[:, :, :-(self.db_size[1] // 5)]
-                observation = observation.reshape((observation.shape[0], observation.shape[1] * observation.shape[2]))
-                observation = observation.reshape(1, *observation.shape)
-                db_input = reshaped[:, :, -(self.db_size[1] // 5):]
-                db_input = db_input.reshape((db_input.shape[0], db_input.shape[1] * db_input.shape[2]))
-                db_input = db_input.reshape(1, *db_input.shape)
+                reshaped = np.reshape(states, (states.shape[0], self.state_size[0], *(5, self.state_size[1] // 5)))
+                observation = reshaped[:, :, :, :-(self.db_size[1] // 5)]
+                observation = observation.reshape((states.shape[0], observation.shape[1], observation.shape[2] * observation.shape[3]))
+                db_input = reshaped[:, :, :, -(self.db_size[1] // 5):]
+                db_input = db_input.reshape((states.shape[0], db_input.shape[1], db_input.shape[2] * db_input.shape[3]))
                 return self.tar_model.predict([observation, db_input])
         else:
             if not self.db_attention:
                 return self.beh_model.predict(states)
             else:
-                reshaped = np.reshape(states[0], (self.state_size[0], *(5, self.state_size[1] // 5)))
-                observation = reshaped[:, :, :-(self.db_size[1] // 5)]
-                observation = observation.reshape((observation.shape[0], observation.shape[1] * observation.shape[2]))
-                observation = observation.reshape(1, *observation.shape)
-                db_input = reshaped[:, :, -(self.db_size[1] // 5):]
-                db_input = db_input.reshape((db_input.shape[0], db_input.shape[1] * db_input.shape[2]))
-                db_input = db_input.reshape(1, *db_input.shape)
+                reshaped = np.reshape(states, (states.shape[0], self.state_size[0], *(5, self.state_size[1] // 5)))
+                observation = reshaped[:, :, :, :-(self.db_size[1] // 5)]
+                observation = observation.reshape((states.shape[0], observation.shape[1], observation.shape[2] * observation.shape[3]))
+                db_input = reshaped[:, :, :, -(self.db_size[1] // 5):]
+                db_input = db_input.reshape((states.shape[0], db_input.shape[1], db_input.shape[2] * db_input.shape[3]))
                 return self.beh_model.predict([observation, db_input])
 
     def add_experience(self, episode):
@@ -299,8 +295,15 @@ class DRQNAgent:
 
                 inputs[i] = s
                 targets[i] = t
-
-            self.beh_model.fit(inputs, targets, epochs=1, verbose=0)
+            if self.db_attention:
+                reshaped = np.reshape(inputs, (inputs.shape[0], self.state_size[0], *(5, self.state_size[1] // 5)))
+                observation = reshaped[:, :, :, :-(self.db_size[1] // 5)]
+                observation = observation.reshape((inputs.shape[0], observation.shape[1], observation.shape[2] * observation.shape[3]))
+                db_input = reshaped[:, :, :, -(self.db_size[1] // 5):]
+                db_input = db_input.reshape((inputs.shape[0], db_input.shape[1], db_input.shape[2] * db_input.shape[3]))
+                self.beh_model.fit([observation, db_input], targets, epochs=1, verbose=0)
+            else:
+                self.beh_model.fit(inputs, targets, epochs=1, verbose=0)
 
     def copy(self):
         """Copies the behavior model's weights into the target model's weights."""
