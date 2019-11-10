@@ -59,6 +59,9 @@ class BeliefStateTrackerProbs:
 
         return (self.num_sequences, self.n_best * (2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num + 1))
 
+    def get_db_size(self):
+        return (self.num_sequences, self.n_best * (2 * self.num_slots + 2 + 1))
+
     def reset(self):
         """Resets current_informs, history and round_num."""
 
@@ -165,7 +168,7 @@ class BeliefStateTrackerProbs:
                 user_request_slots_rep[i][self.slots_dict[key]] = 1.0
 
             for key in self.current_informs[i]:
-                current_slots_rep[i][self.slots_dict[key]] = 1.0 * self.current_informs[i][key]['prob']
+                current_slots_rep[i][self.slots_dict[key]] = 1.0
 
             if last_agent_action:
                 agent_act_rep[i][self.intents_dict[last_agent_action[const.INTENT]]] = 1.0
@@ -178,11 +181,7 @@ class BeliefStateTrackerProbs:
 
             turn_onehot_rep[i][self.round_num - 1] = 1.0
 
-            constraints = {}
-            for k in self.current_informs[i]:
-                constraints[k] = self.current_informs[i][k]['value']
-
-            db_results_dict.append(self.db_helper.get_db_results_for_slots(constraints))
+            db_results_dict.append(self.db_helper.get_db_results_for_slots(self.current_informs[i]))
 
             kb_count_rep[i] = db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] / 100.
             for key in db_results_dict[i].keys():
@@ -194,17 +193,23 @@ class BeliefStateTrackerProbs:
                 if key in self.slots_dict:
                     kb_binary_rep[i][self.slots_dict[key]] = np.sum(db_results_dict[i][key] > 0.)
 
-            # masked_kb_count = np.ma.compressed(np.ma.masked_where(self.current_informs[i] > 0, kb_count_rep[i]))
-            probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, int(self.get_state_size()[1] / self.n_best))[i, -1] * \
-                            (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) / self.last_kb_all_matching[i]
+
+            if db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
+                probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, self.get_state_size()[1] // self.n_best)[i, -1] * \
+                                0.06
+            else:
+                probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, self.get_state_size()[1] // self.n_best)[i, -1] * \
+                               10 / (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) * current_slots_rep[i].sum()
 
             if not probs_rep[i]:
-                probs_rep[i] = n_best_last_user_action[i]['prob'] * (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) / self.last_kb_all_matching[i]
+                if db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
+                    probs_rep[i] = n_best_last_user_action[i]['prob'] * 0.06
+                else:
+                    probs_rep[i] = n_best_last_user_action[i]['prob'] * \
+                               10 / (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) * current_slots_rep[i].sum()
 
             if not probs_rep[i]:
                 probs_rep[i] = n_best_last_user_action[i]['prob']
-
-            self.last_kb_all_matching[i] = db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1
 
         # Normalize probs representation to sum to one
         probs_rep = probs_rep / np.sum(probs_rep)
@@ -242,18 +247,14 @@ class BeliefStateTrackerProbs:
                 p = [1 / self.n_best] * self.n_best
             choice = np.random.choice(range(self.n_best), p=p)
 
-            constraints = {}
-            for k in self.current_informs[choice]:
-                constraints[k] = self.current_informs[choice][k]['value']
-
-            inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], constraints)
+            inform_slots = self.db_helper.fill_inform_slot(agent_action[const.INFORM_SLOTS], self.current_informs[choice])
             agent_action[const.INFORM_SLOTS] = inform_slots
             assert agent_action[const.INFORM_SLOTS]
             for key, value in list(agent_action[const.INFORM_SLOTS].items()):
                 assert key != const.MATCH_FOUND
                 assert value != const.PLACEHOLDER, 'KEY: {}'.format(key)
                 for i in range(self.n_best):
-                    self.current_informs[i][key] = {'value': value, 'prob': 1.0}
+                    self.current_informs[i][key] = value
         # If intent is match_found then fill the action informs with the matches informs (if there is a match)
         elif agent_action[const.INTENT] == const.MATCH_FOUND:
             assert not agent_action[const.INFORM_SLOTS], 'Cannot inform and have intent of match found!'
@@ -265,11 +266,7 @@ class BeliefStateTrackerProbs:
                 p = [1 / self.n_best] * self.n_best
             choice = np.random.choice(range(self.n_best), p=p)
 
-            constraints = {}
-            for k in self.current_informs[choice]:
-                constraints[k] = self.current_informs[choice][k]['value']
-
-            db_results = self.db_helper.get_db_results(constraints)
+            db_results = self.db_helper.get_db_results(self.current_informs[choice])
             if db_results:
                 # Arbitrarily pick the first value of the dict
                 key, value = list(db_results.items())[0]
@@ -278,7 +275,7 @@ class BeliefStateTrackerProbs:
             else:
                 agent_action[const.INFORM_SLOTS][self.match_key] = const.NO_MATCH
             for i in range(self.n_best):
-                self.current_informs[i][self.match_key] = {'value': agent_action[const.INFORM_SLOTS][self.match_key], 'prob': 1.0}
+                self.current_informs[i][self.match_key] = agent_action[const.INFORM_SLOTS][self.match_key]
         agent_action.update({const.ROUND: self.round_num, const.SPEAKER_TYPE: const.AGT_SPEAKER_VAL})
         self.history.append(agent_action)
 
@@ -298,7 +295,7 @@ class BeliefStateTrackerProbs:
         n_best_actions = self.__generate_noise_user_actions(user_action)
         for idx, action in enumerate(n_best_actions):
             for key, value in action['action'][const.INFORM_SLOTS].items():
-                self.current_informs[idx][key] = {'value': value, 'prob': action['prob']}
+                self.current_informs[idx][key] = value
 
         for action in n_best_actions:
             action.update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
@@ -346,24 +343,7 @@ class BeliefStateTrackerProbs:
         # Error on intent
         possible_intents = copy.copy(cfg.user_intents)
         possible_intents.remove(action[const.INTENT])
-        # if action[const.INTENT] != const.THANKS:
-        #     possible_intents.remove(const.THANKS)
 
-        # action[const.INTENT] = np.random.choice(possible_intents)
-
-        # possible_slots = copy.copy(cfg.all_slots)
-        # possible_slots.remove(cfg.usersim_default_key)
-        # if action[const.INTENT] == const.INFORM:
-        #     # Sample a random slot-value pair
-        #     slot = np.random.choice(possible_slots)
-        #     action[const.INFORM_SLOTS][slot] = np.random.choice(self.movie_dict[slot])
-        # elif action[const.INTENT] == const.REQUEST:
-        #     # Sample a random slot to request
-        #     slot = np.random.choice(possible_slots)
-        #     action[const.REQUEST_SLOTS][slot] = const.UNKNOWN
-        # else:
-        #     action[const.INFORM_SLOTS] = {}
-        #     action[const.REQUEST_SLOTS] = {}
         action[const.INTENT] = np.random.choice(possible_intents)
         return action
 
