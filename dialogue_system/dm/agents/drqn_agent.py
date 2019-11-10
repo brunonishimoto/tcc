@@ -34,6 +34,7 @@ class DRQNAgent:
         self.gamma = self.C['gamma']
         self.batch_size = self.C['batch_size']
         self.trace_length = self.C['trace_length']
+        self.db_attention = self.C['db_attention']
 
         self.load_weights_file_path = self.C['load_weights_file_path']
         self.save_weights_file_path = self.C['save_weights_file_path']
@@ -56,10 +57,12 @@ class DRQNAgent:
 
         self.reset()
 
-    def build_models(self, state_size):
+    def build_models(self, state_size, db_size=None):
         self.state_size = state_size
         self.C['model']['input_dim'] = state_size
         self.C['model']['output_dim'] = self.num_actions
+        self.C['model']['db_size'] = db_size
+        self.db_size = db_size
 
         self.beh_model = models.load(self.C).build_model()
         self.tar_model = models.load(self.C).build_model()
@@ -192,9 +195,26 @@ class DRQNAgent:
         """
 
         if target:
-            return self.tar_model.predict(states)
+            if not self.db_attention:
+                return self.tar_model.predict(states)
+            else:
+                observation = states[0][:, :-2]
+                observation = observation.reshape(1, *observation.shape)
+                db_input = states[0][:, -2:]
+                db_input = db_input.reshape(1, *db_input.shape)
+                return self.tar_model.predict([observation, db_input])
         else:
-            return self.beh_model.predict(states)
+            if not self.db_attention:
+                return self.beh_model.predict(states)
+            else:
+                reshaped = np.reshape(states[0], (self.state_size[0], *(5, self.state_size[1] // 5)))
+                observation = reshaped[:, :, :-(self.db_size[1] // 5)]
+                observation = observation.reshape((observation.shape[0], observation.shape[1] * observation.shape[2]))
+                observation = observation.reshape(1, *observation.shape)
+                db_input = reshaped[:, :, -(self.db_size[1] // 5):]
+                db_input = db_input.reshape((db_input.shape[0], db_input.shape[1] * db_input.shape[2]))
+                db_input = db_input.reshape(1, *db_input.shape)
+                return self.beh_model.predict([observation, db_input])
 
     def add_experience(self, episode):
         """

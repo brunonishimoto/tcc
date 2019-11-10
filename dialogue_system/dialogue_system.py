@@ -25,7 +25,14 @@ class DialogueSystem:
         self.nlg = nlgs.load(config)
         self.state_tracker = state_trackers.load(config)
         self.agent = agents.load(config)
-        self.agent.build_models(self.state_tracker.get_state_size())
+
+        db_size = None
+        try:
+            db_size = self.state_tracker.get_db_size()
+        except:
+            pass
+
+        self.agent.build_models(self.state_tracker.get_state_size(), db_size)
 
         self.use_nl = config['use_nl']
         self.real_user = config['real_user']

@@ -58,6 +58,9 @@ class BeliefStateTracker:
 
         return (self.num_sequences, self.n_best * (2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num))
 
+    def get_db_size(self):
+        return (self.num_sequences, self.n_best * (2 * self.num_slots + 2))
+
     def reset(self):
         """Resets current_informs, history and round_num."""
 

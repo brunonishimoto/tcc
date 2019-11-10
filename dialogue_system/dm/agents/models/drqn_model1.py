@@ -1,6 +1,7 @@
-from keras.models import Sequential
-from keras.layers import Dense, LSTM
+from keras.models import Sequential, Model
+from keras.layers import Dense, LSTM, Input, Flatten
 from keras.optimizers import Adam
+from keras.layers import concatenate
 
 
 class DRQNModel1:
@@ -16,13 +17,21 @@ class DRQNModel1:
         self.activation_out = self.model_parameters['activation_out']
         self.loss = self.model_parameters['loss']
         self.output_dim = self.model_parameters['output_dim']
+        self.db_size = self.model_parameters['db_size']
 
     def build_model(self):
         """Builds and returns model/graph of neural network."""
-        model = Sequential()
-        model.add((Dense(self.hidden_size, input_shape=self.input_dim, activation=self.activation)))
-        model.add(Dense(self.hidden_size, activation=self.activation))
-        model.add(LSTM(self.output_dim, activation=self.activation_out))
+        observation = Input(shape=(self.input_dim[0], self.input_dim[1] - self.db_size[1]))
+        db_input = Input(shape=self.db_size)
+
+        encoded_observation = LSTM(self.hidden_size)(observation)
+        db_attention = Dense(10, activation=self.activation)(db_input)
+        db_flatten = Flatten()(db_attention)
+        merged_vector = concatenate([encoded_observation, db_flatten])
+
+        outputs = Dense(self.output_dim, activation=self.activation_out)(merged_vector)
+
+        model = Model(input=[observation, db_input], outputs=outputs)
         model.compile(loss=self.loss, optimizer=Adam(lr=self.lr, decay=self.lr_decay))
 
         return model
