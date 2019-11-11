@@ -195,26 +195,29 @@ class BeliefStateTrackerProbs:
                 if key in self.slots_dict:
                     kb_binary_rep[i][self.slots_dict[key]] = np.sum(db_results_dict[i][key] > 0.)
 
+            probs_rep[i] = current_slots_rep[i].sum() * db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS]
+            # if db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
+            #     probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, self.get_state_size()[1] // self.n_best)[i, -1] * \
+            #                     0.1
+            # else:
+            #     probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, self.get_state_size()[1] // self.n_best)[i, -1] * \
+            #                    10 / (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) * current_slots_rep[i].sum()
 
-            if db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
-                probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, self.get_state_size()[1] // self.n_best)[i, -1] * \
-                                0.06
-            else:
-                probs_rep[i] = n_best_last_user_action[i]['prob'] * self.history_states[-1].reshape(self.n_best, self.get_state_size()[1] // self.n_best)[i, -1] * \
-                               10 / (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) * current_slots_rep[i].sum()
+            # if not probs_rep[i]:
+            #     if db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
+            #         probs_rep[i] = n_best_last_user_action[i]['prob'] * 0.06
+            #     else:
+            #         probs_rep[i] = n_best_last_user_action[i]['prob'] * \
+            #                    10 / (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) * current_slots_rep[i].sum()
 
-            if not probs_rep[i]:
-                if db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
-                    probs_rep[i] = n_best_last_user_action[i]['prob'] * 0.06
-                else:
-                    probs_rep[i] = n_best_last_user_action[i]['prob'] * \
-                               10 / (db_results_dict[i][const.KB_MATCHING_ALL_CONSTRAINTS] + 1) * current_slots_rep[i].sum()
-
-            if not probs_rep[i]:
-                probs_rep[i] = n_best_last_user_action[i]['prob']
+            # if not probs_rep[i]:
+            #     probs_rep[i] = n_best_last_user_action[i]['prob']
 
         # Normalize probs representation to sum to one
-        probs_rep = probs_rep / np.sum(probs_rep)
+        if np.array(probs_rep).sum() == 0:
+            probs_rep[:] = 1 / self.n_best
+        else:
+            probs_rep = probs_rep / np.sum(probs_rep)
 
         state_representation = np.hstack(
             [user_act_rep, user_inform_slots_rep, user_request_slots_rep, agent_act_rep, agent_inform_slots_rep,
