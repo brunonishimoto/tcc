@@ -242,7 +242,7 @@ class BeliefStateTracker:
                     probs.append(0)
 
             if np.array(probs).sum() == 0:
-                probs = [1 / 5] * 5
+                probs = [1 / self.n_best] * self.n_best
 
             db_results = np.random.choice(possible_results, p=probs)
 
