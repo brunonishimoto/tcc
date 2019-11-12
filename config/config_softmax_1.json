@@ -25,14 +25,14 @@
     "sigma_stop": 0,
     "sigma_decay": 3000,
     "success_rate_threshold": 0.3,
-    "performance_path": "checkpoints/normal_3/performance.json"
+    "performance_path": "checkpoints/normal_1/performance.json"
   },
   "dst": {
     "name": "StateTracker"
   },
   "agent": {
     "name": "DQNSoftmax",
-    "save_weights_file_path": "weights/dm/normal_3/model.h5",
+    "save_weights_file_path": "weights/dm/normal_1/model.h5",
     "load_weights_file_path": "",
     "vanilla": true,
     "batch_size": 16,
@@ -68,7 +68,7 @@
   },
   "emc": {
     "slot_error_mode": 3,
-    "slot_error_prob": 0.3,
+    "slot_error_prob": 0.1,
     "intent_error_prob": 0.2
   }
 }
