@@ -1,5 +1,6 @@
 from .state_tracker import StateTracker
 from .belief_state_tracker import BeliefStateTracker
+from .belief_state_tracker1 import BeliefStateTracker1
 from .belief_state_tracker_probs import BeliefStateTrackerProbs
 
 def load(config):
