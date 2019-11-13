@@ -56,7 +56,7 @@ class BeliefStateTracker:
     def get_state_size(self):
         """Returns the state size of the state representation used by the agent."""
 
-        return (self.num_sequences, self.n_best * (2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num))
+        return self.n_best * (2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num)
 
     def get_db_size(self):
         return (self.num_sequences, self.n_best * (2 * self.num_slots + 2))
@@ -70,7 +70,7 @@ class BeliefStateTracker:
             self.current_informs.append({})
         # A list of the dialogues (dicts) by the agent and user so far in the conversation
         self.round_num = 0
-        self.history_states = np.zeros(self.get_state_size())
+        self.history_states = np.zeros((self.num_sequences, self.get_state_size()))
 
     def print_history(self):
         """Helper function if you want to see the current history action by action."""
@@ -91,6 +91,9 @@ class BeliefStateTracker:
         """ get the kb_results for current state """
         kb_results = self.db_helper.get_db_results(self.current_informs[0])
         return kb_results
+
+    def get_history_states(self):
+        return self.get_state()
 
     def get_state(self, done=False):
         """
@@ -195,7 +198,7 @@ class BeliefStateTracker:
 
         self.history_states = np.roll(self.history_states, -1, axis=0)
         self.history_states[-1] = state_representation
-        return self.history_states
+        return state_representation
 
     def update_state_agent(self, agent_action):
         """

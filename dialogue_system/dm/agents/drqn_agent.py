@@ -179,7 +179,7 @@ class DRQNAgent:
             numpy.array
         """
 
-        return self._dqn_predict(state.reshape(1, *self.state_size), target=target).flatten()
+        return self._dqn_predict(state.reshape(1, self.state_size), target=target).flatten()
 
     def _dqn_predict(self, states, target=False):
         """
@@ -270,10 +270,10 @@ class DRQNAgent:
             states = np.array([sample[0] for sample in batch])
             next_states = np.array([sample[3] for sample in batch])
 
-            states = np.resize(states, (self.batch_size * self.trace_length, *self.state_size))
-            next_states = np.resize(next_states, (self.batch_size * self.trace_length, *self.state_size))
+            states = np.resize(states, (self.batch_size * self.trace_length, self.state_size))
+            next_states = np.resize(next_states, (self.batch_size * self.trace_length, self.state_size))
 
-            assert states.shape == (self.batch_size * self.trace_length, *self.state_size), 'States Shape: {}'.format(states.shape)
+            assert states.shape == (self.batch_size * self.trace_length, self.state_size), 'States Shape: {}'.format(states.shape)
             assert next_states.shape == states.shape
 
             beh_state_preds = self._dqn_predict(states)  # For leveling error
@@ -282,7 +282,7 @@ class DRQNAgent:
             else:
                 tar_next_state_preds = self._dqn_predict(next_states, target=True)  # For target value for DQN (& DDQN)
 
-            inputs = np.zeros((self.batch_size * self.trace_length, *self.state_size))
+            inputs = np.zeros((self.batch_size * self.trace_length, self.state_size))
             targets = np.zeros((self.batch_size * self.trace_length, self.num_actions))
 
             for i, (s, a, r, s_, d) in enumerate(batch):

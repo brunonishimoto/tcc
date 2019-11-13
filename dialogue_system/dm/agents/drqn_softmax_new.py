@@ -62,7 +62,6 @@ class DRQNSoftmaxNew(DRQNAgentNew):
                 # Softmax
 
                 q_values = self._dqn_predict(state.reshape(1, *self.state_size))
-                q_values = q_values[0][-1]
                 q_modified = q_values / self.tau
                 q_max = np.max(q_modified)
                 exp_values = np.exp(q_modified - q_max)
