@@ -72,6 +72,9 @@ class StateTracker:
         """ get the kb_results for current state """
         kb_results = self.db_helper.get_db_results(self.current_informs)
         return kb_results
+    
+    def get_history_states(self):
+        return self.get_state()
 
     def get_state(self, done=False):
         """
