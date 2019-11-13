@@ -370,7 +370,7 @@ class BeliefStateTracker1:
             # If there are no matches on db with this action
             if new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
                 score -= 1
-            else:
+            elif db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 991:
                 score += db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] / new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS]
 
             # Score based on the last agent action
