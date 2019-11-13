@@ -57,8 +57,8 @@ class BeliefStateTracker1:
     def get_state_size(self):
         """Returns the state size of the state representation used by the agent."""
 
-        return (1, (self.n_best + 1) * self.num_intents + (2 * self.n_best + 5) * self.num_slots + 3 + self.max_round_num)
-        # return (1, 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num)
+        # return (1, (self.n_best + 1) * self.num_intents + (2 * self.n_best + 5) * self.num_slots + 3 + self.max_round_num)
+        return (1, 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num)
 
     def get_db_size(self):
         return (self.num_sequences, self.n_best * (2 * self.num_slots + 2))
@@ -384,45 +384,48 @@ class BeliefStateTracker1:
         db_results_dict = self.db_helper.get_db_results_for_slots(self.current_informs)
         last_agent_action = self.history[-1] if len(self.history) > 1 else None
 
-        for action in n_best_actions:
-            score = 0
+        if not cfg.error:
+            return np.flip(n_best_actions)
+        else:
+            for action in n_best_actions:
+                score = 0
 
-            new_current_informs = copy.deepcopy(self.current_informs)
+                new_current_informs = copy.deepcopy(self.current_informs)
 
-            # Penalize repeated infomation
-            for key, value in action[const.INFORM_SLOTS].items():
-                if key in self.current_informs and self.current_informs[key] == value:
-                    score -= 2
-                new_current_informs[key] = value
+                # Penalize repeated infomation
+                for key, value in action[const.INFORM_SLOTS].items():
+                    if key in self.current_informs and self.current_informs[key] == value:
+                        score -= 2
+                    new_current_informs[key] = value
 
-            new_db_results_dict = self.db_helper.get_db_results_for_slots(new_current_informs)
+                new_db_results_dict = self.db_helper.get_db_results_for_slots(new_current_informs)
 
-            # If there are no matches on db with this action
-            if new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
-                score -= 1
-            elif db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 991 and db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 0:
-                score += new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] / db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS]
+                # If there are no matches on db with this action
+                if new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
+                    score -= 1
+                elif db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 991 and db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 0:
+                    score += new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] / db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS]
 
-            # Score based on the last agent action
-            if last_agent_action:
-                if last_agent_action[const.INTENT] == const.INFORM_SLOTS:
-                    if action[const.INTENT] == const.REQUEST:
-                        score += 1.0
-                    elif action[const.INTENT] == const.INFORM:
-                        score += 0.5
-                    else:
-                        score -= 0.5
-                elif last_agent_action[const.INTENT] == const.REQUEST:
-                    if action[const.INTENT] == const.INFORM:
-                        score += 1.0
-                    elif action[const.INTENT] == const.REQUEST:
-                        score += 0.5
-                    elif action[const.INTENT] == const.THANKS:
-                        score += 0.1
-                    else:
-                        score -= 0.5
+                # Score based on the last agent action
+                if last_agent_action:
+                    if last_agent_action[const.INTENT] == const.INFORM_SLOTS:
+                        if action[const.INTENT] == const.REQUEST:
+                            score += 1.0
+                        elif action[const.INTENT] == const.INFORM:
+                            score += 0.5
+                        else:
+                            score -= 0.5
+                    elif last_agent_action[const.INTENT] == const.REQUEST:
+                        if action[const.INTENT] == const.INFORM:
+                            score += 1.0
+                        elif action[const.INTENT] == const.REQUEST:
+                            score += 0.5
+                        elif action[const.INTENT] == const.THANKS:
+                            score += 0.1
+                        else:
+                            score -= 0.5
 
-            scores.append(score)
+                scores.append(score)
 
-        return np.array(n_best_actions).take(np.argsort(scores))
+            return np.array(n_best_actions).take(np.argsort(scores))
 

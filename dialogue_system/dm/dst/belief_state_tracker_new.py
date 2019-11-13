@@ -276,6 +276,7 @@ class BeliefStateTrackerNew:
         """
 
         n_best_actions = self.__generate_noise_user_actions(user_action)
+        # ranked_actions = self.__rank_actions(n_best_actions)
         for idx, action in enumerate(n_best_actions):
             for key, value in action[const.INFORM_SLOTS].items():
                 self.current_informs[idx][key] = value
@@ -289,8 +290,9 @@ class BeliefStateTrackerNew:
         request_slots = user_action[const.REQUEST_SLOTS]
 
         n_best_confused_actions = []
+        n_best_confused_actions.append(cfg.correct)
         n_best_confused_actions.append(user_action)
-        for i in range(1, self.n_best):
+        for i in range(2, self.n_best):
             n_best_confused_actions.append(self.__create_wrong_action(user_action))
 
         return n_best_confused_actions
@@ -387,3 +389,53 @@ class BeliefStateTrackerNew:
         action[const.REQUEST_SLOTS][new_slot] = const.UNKNOWN
 
         return action
+
+    def __rank_actions(self, n_best_actions):
+        scores = []
+        db_results_dict = self.db_helper.get_db_results_for_slots(self.current_informs)
+        last_agent_action = self.history[-1] if len(self.history) > 1 else None
+
+        if not cfg.error:
+            return n_best_actions
+        else:
+            for action in n_best_actions:
+                score = 0
+
+                new_current_informs = copy.deepcopy(self.current_informs)
+
+                # Penalize repeated infomation
+                for key, value in action[const.INFORM_SLOTS].items():
+                    if key in self.current_informs and self.current_informs[key] == value:
+                        score -= 2
+                    new_current_informs[key] = value
+
+                new_db_results_dict = self.db_helper.get_db_results_for_slots(new_current_informs)
+
+                # If there are no matches on db with this action
+                if new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
+                    score -= 1
+                elif db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 991 and db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 0:
+                    score += new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] / db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS]
+
+                # Score based on the last agent action
+                if last_agent_action:
+                    if last_agent_action[const.INTENT] == const.INFORM_SLOTS:
+                        if action[const.INTENT] == const.REQUEST:
+                            score += 1.0
+                        elif action[const.INTENT] == const.INFORM:
+                            score += 0.5
+                        else:
+                            score -= 0.5
+                    elif last_agent_action[const.INTENT] == const.REQUEST:
+                        if action[const.INTENT] == const.INFORM:
+                            score += 1.0
+                        elif action[const.INTENT] == const.REQUEST:
+                            score += 0.5
+                        elif action[const.INTENT] == const.THANKS:
+                            score += 0.1
+                        else:
+                            score -= 0.5
+
+                scores.append(score)
+
+            return np.flip(np.array(n_best_actions).take(np.argsort(scores)))
