@@ -4,6 +4,9 @@
 'anything'  # means any value works for the slot with this value
 'no match available'  # When the intent of the agent is match_found yet no db match fits current constraints
 
+error = True
+correct = None
+
 #######################################
 # Usersim Config
 #######################################
