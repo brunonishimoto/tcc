@@ -206,7 +206,7 @@ class DRQNAgent:
             else:
                 observation1 = states[:, 0].reshape((states.shape[0], 1, states[0][0].shape[0]))
                 observation2 = states[:, 1].reshape((states.shape[0], 1, states[0][1].shape[0]))
-                return self.tar_model.predict([observation1, observation2])
+                return self.beh_model.predict([observation1, observation2])
 
     def add_experience(self, episode):
         """

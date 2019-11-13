@@ -58,6 +58,7 @@ class BeliefStateTracker1:
         """Returns the state size of the state representation used by the agent."""
 
         return (1, (self.n_best + 1) * self.num_intents + (2 * self.n_best + 5) * self.num_slots + 3 + self.max_round_num)
+        # return (1, 2 * self.num_intents + 7 * self.num_slots + 3 + self.max_round_num)
 
     def get_db_size(self):
         return (self.num_sequences, self.n_best * (2 * self.num_slots + 2))
@@ -114,47 +115,48 @@ class BeliefStateTracker1:
             return self.none_state
 
         # Representations that use user action
-        n_best_last_user_action = self.history[-1]
+        # n_best_last_user_action = self.history[-1]
+        user_action = self.history[-1]
 
-        # Create one-hot of intents to represent the current user action
-        user_act_rep = np.zeros((self.n_best, self.num_intents))
+        # # Create one-hot of intents to represent the current user action
+        # user_act_rep = np.zeros((self.n_best, self.num_intents))
 
-        # Create bag of inform slots representation to represent the current user action
-        user_inform_slots_rep = np.zeros((self.n_best, self.num_slots))
+        # # Create bag of inform slots representation to represent the current user action
+        # user_inform_slots_rep = np.zeros((self.n_best, self.num_slots))
 
-        # Create bag of request slots representation to represent the current user action
-        user_request_slots_rep = np.zeros((self.n_best, self.num_slots))
+        # # Create bag of request slots representation to represent the current user action
+        # user_request_slots_rep = np.zeros((self.n_best, self.num_slots))
 
-        for i in range(self.n_best):
-            user_act_rep[i][self.intents_dict[n_best_last_user_action[i][const.INTENT]]] = 1.0
+        # for i in range(self.n_best):
+        #     user_act_rep[i][self.intents_dict[n_best_last_user_action[i][const.INTENT]]] = 1.0
 
-            for key in n_best_last_user_action[i][const.INFORM_SLOTS].keys():
-                user_inform_slots_rep[i][self.slots_dict[key]] = 1.0
+        #     for key in n_best_last_user_action[i][const.INFORM_SLOTS].keys():
+        #         user_inform_slots_rep[i][self.slots_dict[key]] = 1.0
 
-            for key in n_best_last_user_action[i][const.REQUEST_SLOTS].keys():
-                user_request_slots_rep[i][self.slots_dict[key]] = 1.0
+        #     for key in n_best_last_user_action[i][const.REQUEST_SLOTS].keys():
+        #         user_request_slots_rep[i][self.slots_dict[key]] = 1.0
 
-        user_act_rep = user_act_rep.flatten()
-        user_inform_slots_rep = user_inform_slots_rep.flatten()
-        user_request_slots_rep = user_request_slots_rep.flatten()
+        # user_act_rep = user_act_rep.flatten()
+        # user_inform_slots_rep = user_inform_slots_rep.flatten()
+        # user_request_slots_rep = user_request_slots_rep.flatten()
 
         # user_action = self.history[-1]
         db_results_dict = self.db_helper.get_db_results_for_slots(self.current_informs)
         last_agent_action = self.history[-2] if len(self.history) > 1 else None
 
-        # # Create one-hot of intents to represent the current user action
-        # user_act_rep = np.zeros((self.num_intents,))
-        # user_act_rep[self.intents_dict[user_action[const.INTENT]]] = 1.0
+        # Create one-hot of intents to represent the current user action
+        user_act_rep = np.zeros((self.num_intents,))
+        user_act_rep[self.intents_dict[user_action[const.INTENT]]] = 1.0
 
-        # # Create bag of inform slots representation to represent the current user action
-        # user_inform_slots_rep = np.zeros((self.num_slots,))
-        # for key in user_action[const.INFORM_SLOTS].keys():
-        #     user_inform_slots_rep[self.slots_dict[key]] = 1.0
+        # Create bag of inform slots representation to represent the current user action
+        user_inform_slots_rep = np.zeros((self.num_slots,))
+        for key in user_action[const.INFORM_SLOTS].keys():
+            user_inform_slots_rep[self.slots_dict[key]] = 1.0
 
-        # # Create bag of request slots representation to represent the current user action
-        # user_request_slots_rep = np.zeros((self.num_slots,))
-        # for key in user_action[const.REQUEST_SLOTS].keys():
-        #     user_request_slots_rep[self.slots_dict[key]] = 1.0
+        # Create bag of request slots representation to represent the current user action
+        user_request_slots_rep = np.zeros((self.num_slots,))
+        for key in user_action[const.REQUEST_SLOTS].keys():
+            user_request_slots_rep[self.slots_dict[key]] = 1.0
 
         # Create bag of filled_in slots based on the current_slots
         current_slots_rep = np.zeros((self.num_slots,))
@@ -269,7 +271,7 @@ class BeliefStateTracker1:
 
         ranked_action[-1].update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
         user_action = ranked_action[-1]
-        self.history.append(ranked_action)
+        self.history.append(ranked_action[-1])
         self.round_num += 1
 
     def __generate_noise_user_actions(self, user_action):
@@ -398,21 +400,21 @@ class BeliefStateTracker1:
             # If there are no matches on db with this action
             if new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
                 score -= 1
-            elif db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 991:
-                score += db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] / new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS]
+            elif db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 991 and db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] != 0:
+                score += new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] / db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS]
 
             # Score based on the last agent action
             if last_agent_action:
                 if last_agent_action[const.INTENT] == const.INFORM_SLOTS:
                     if action[const.INTENT] == const.REQUEST:
-                        score += 1.5
+                        score += 1.0
                     elif action[const.INTENT] == const.INFORM:
                         score += 0.5
                     else:
                         score -= 0.5
                 elif last_agent_action[const.INTENT] == const.REQUEST:
                     if action[const.INTENT] == const.INFORM:
-                        score += 1.5
+                        score += 1.0
                     elif action[const.INTENT] == const.REQUEST:
                         score += 0.5
                     elif action[const.INTENT] == const.THANKS:
