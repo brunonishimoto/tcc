@@ -265,13 +265,13 @@ class BeliefStateTracker1:
 
         n_best_actions = self.__generate_noise_user_actions(user_action)
 
-        ranked_action  = self.__rank_actions(n_best_actions)
-        for key, value in ranked_action[-1][const.INFORM_SLOTS].items():
+        ranked_action = self.__rank_actions(n_best_actions)
+        for key, value in ranked_action[0][const.INFORM_SLOTS].items():
             self.current_informs[key] = value
 
-        ranked_action[-1].update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
-        user_action = ranked_action[-1]
-        self.history.append(ranked_action[-1])
+        ranked_action[0].update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
+        user_action = ranked_action[0]
+        self.history.append(ranked_action[0])
         self.round_num += 1
 
     def __generate_noise_user_actions(self, user_action):
@@ -384,6 +384,8 @@ class BeliefStateTracker1:
         db_results_dict = self.db_helper.get_db_results_for_slots(self.current_informs)
         last_agent_action = self.history[-1] if len(self.history) > 1 else None
 
+        n_best_actions[0] = cfg.correct
+        return n_best_actions
         if not cfg.error:
             return np.flip(n_best_actions)
         else:
@@ -427,5 +429,5 @@ class BeliefStateTracker1:
 
                 scores.append(score)
 
-            return np.array(n_best_actions).take(np.argsort(scores))
+            return np.flip(np.array(n_best_actions).take(np.argsort(scores)))
 

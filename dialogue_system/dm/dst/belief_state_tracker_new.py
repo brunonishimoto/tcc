@@ -285,10 +285,6 @@ class BeliefStateTrackerNew:
         self.round_num += 1
 
     def __generate_noise_user_actions(self, user_action):
-        intent = user_action[const.INTENT]
-        inform_slots = user_action[const.INFORM_SLOTS]
-        request_slots = user_action[const.REQUEST_SLOTS]
-
         n_best_confused_actions = []
         n_best_confused_actions.append(cfg.correct)
         n_best_confused_actions.append(user_action)
