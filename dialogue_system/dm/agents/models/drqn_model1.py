@@ -21,17 +21,16 @@ class DRQNModel1:
 
     def build_model(self):
         """Builds and returns model/graph of neural network."""
-        observation = Input(shape=(self.input_dim[0], self.input_dim[1] - self.db_size[1]))
-        db_input = Input(shape=self.db_size)
+        observation1 = Input(shape=(1, self.input_dim[1]))
+        observation2 = Input(shape=(1, self.input_dim[1]))
 
-        encoded_observation = LSTM(self.hidden_size)(observation)
-        db_attention = Dense(10, activation=self.activation)(db_input)
-        db_flatten = Flatten()(db_attention)
-        merged_vector = concatenate([encoded_observation, db_flatten])
+        encoded_observation1 = LSTM(self.hidden_size)(observation1)
+        encoded_observation2 = LSTM(self.hidden_size)(observation2)
 
+        merged_vector = concatenate([encoded_observation1, encoded_observation2])
         outputs = Dense(self.output_dim, activation=self.activation_out)(merged_vector)
 
-        model = Model(input=[observation, db_input], outputs=outputs)
+        model = Model(input=[observation1, observation2], outputs=outputs)
         model.compile(loss=self.loss, optimizer=Adam(lr=self.lr, decay=self.lr_decay))
 
         return model

@@ -20,7 +20,7 @@ class DRQNModelNew:
     def build_model(self):
         """Builds and returns model/graph of neural network."""
         model = Sequential()
-        model.add(LSTM(self.hidden_size, input_shape=self.input_dim, return_sequences=True))
+        model.add(LSTM(self.hidden_size, input_shape=self.input_dim))
         # model.add(Dense(self.hidden_size, activation=self.activation))
         model.add(Dense(self.output_dim, activation=self.activation_out))
         model.compile(loss=self.loss, optimizer=Adam(lr=self.lr, decay=self.lr_decay))

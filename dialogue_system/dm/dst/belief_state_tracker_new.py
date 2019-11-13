@@ -33,7 +33,7 @@ class BeliefStateTrackerNew:
         self.movie_dict = pickle.load(open(dict_path, 'rb'), encoding='latin1')
 
         self.n_best = config['dst']['n_best']
-        self.num_sequences = config['agent']['trace_length']
+        self.num_sequences = config['dst']['num_sequences']
         self.intent_error_prob = config['dst']['intent_error_prob']
         self.value_error_prob = config['dst']['value_error_prob']
         self.slot_error_prob = config['dst']['slot_error_prob']
@@ -49,7 +49,7 @@ class BeliefStateTrackerNew:
         self.slots_dict = convert_list_to_dict(cfg.all_slots)
         self.num_slots = len(cfg.all_slots)
         self.max_round_num = config['run']['max_round_num']
-        self.none_state = np.zeros(self.get_state_size()[1])
+        self.none_state = np.zeros(self.get_state_size())
 
         self.reset()
 
@@ -199,7 +199,7 @@ class BeliefStateTrackerNew:
         self.history_states = np.roll(self.history_states, -1, axis=0)
         self.history_states[-1] = state_representation
 
-        return state_representation
+        return self.history_states
 
     def update_state_agent(self, agent_action):
         """

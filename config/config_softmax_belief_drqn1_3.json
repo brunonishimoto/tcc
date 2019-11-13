@@ -51,7 +51,7 @@
     "db_attention": true,
     "model": {
       "name": "DRQNModel1",
-      "dqn_hidden_size": 128,
+      "dqn_hidden_size": 80,
       "activation": "relu",
       "activation_out": "linear",
       "loss": "mse",

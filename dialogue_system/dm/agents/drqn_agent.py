@@ -197,22 +197,16 @@ class DRQNAgent:
             if not self.db_attention:
                 return self.tar_model.predict(states)
             else:
-                reshaped = np.reshape(states, (states.shape[0], self.state_size[0], *(5, self.state_size[1] // 5)))
-                observation = reshaped[:, :, :, :-(self.db_size[1] // 5)]
-                observation = observation.reshape((states.shape[0], observation.shape[1], observation.shape[2] * observation.shape[3]))
-                db_input = reshaped[:, :, :, -(self.db_size[1] // 5):]
-                db_input = db_input.reshape((states.shape[0], db_input.shape[1], db_input.shape[2] * db_input.shape[3]))
-                return self.tar_model.predict([observation, db_input])
+                observation1 = states[:, 0].reshape((states.shape[0], 1, states[0][0].shape[0]))
+                observation2 = states[:, 1].reshape((states.shape[0], 1, states[0][1].shape[0]))
+                return self.tar_model.predict([observation1, observation2])
         else:
             if not self.db_attention:
                 return self.beh_model.predict(states)
             else:
-                reshaped = np.reshape(states, (states.shape[0], self.state_size[0], *(5, self.state_size[1] // 5)))
-                observation = reshaped[:, :, :, :-(self.db_size[1] // 5)]
-                observation = observation.reshape((states.shape[0], observation.shape[1], observation.shape[2] * observation.shape[3]))
-                db_input = reshaped[:, :, :, -(self.db_size[1] // 5):]
-                db_input = db_input.reshape((states.shape[0], db_input.shape[1], db_input.shape[2] * db_input.shape[3]))
-                return self.beh_model.predict([observation, db_input])
+                observation1 = states[:, 0].reshape((states.shape[0], 1, states[0][0].shape[0]))
+                observation2 = states[:, 1].reshape((states.shape[0], 1, states[0][1].shape[0]))
+                return self.tar_model.predict([observation1, observation2])
 
     def add_experience(self, episode):
         """
@@ -270,10 +264,10 @@ class DRQNAgent:
             states = np.array([sample[0] for sample in batch])
             next_states = np.array([sample[3] for sample in batch])
 
-            states = np.resize(states, (self.batch_size * self.trace_length, self.state_size))
-            next_states = np.resize(next_states, (self.batch_size * self.trace_length, self.state_size))
+            states = np.resize(states, (self.batch_size * self.trace_length, *self.state_size))
+            next_states = np.resize(next_states, (self.batch_size * self.trace_length, *self.state_size))
 
-            assert states.shape == (self.batch_size * self.trace_length, self.state_size), 'States Shape: {}'.format(states.shape)
+            assert states.shape == (self.batch_size * self.trace_length, *self.state_size), 'States Shape: {}'.format(states.shape)
             assert next_states.shape == states.shape
 
             beh_state_preds = self._dqn_predict(states)  # For leveling error
@@ -282,7 +276,7 @@ class DRQNAgent:
             else:
                 tar_next_state_preds = self._dqn_predict(next_states, target=True)  # For target value for DQN (& DDQN)
 
-            inputs = np.zeros((self.batch_size * self.trace_length, self.state_size))
+            inputs = np.zeros((self.batch_size * self.trace_length, *self.state_size))
             targets = np.zeros((self.batch_size * self.trace_length, self.num_actions))
 
             for i, (s, a, r, s_, d) in enumerate(batch):
@@ -295,12 +289,9 @@ class DRQNAgent:
                 inputs[i] = s
                 targets[i] = t
             if self.db_attention:
-                reshaped = np.reshape(inputs, (inputs.shape[0], self.state_size[0], *(5, self.state_size[1] // 5)))
-                observation = reshaped[:, :, :, :-(self.db_size[1] // 5)]
-                observation = observation.reshape((inputs.shape[0], observation.shape[1], observation.shape[2] * observation.shape[3]))
-                db_input = reshaped[:, :, :, -(self.db_size[1] // 5):]
-                db_input = db_input.reshape((inputs.shape[0], db_input.shape[1], db_input.shape[2] * db_input.shape[3]))
-                self.beh_model.fit([observation, db_input], targets, epochs=1, verbose=0)
+                observation1 = states[:, 0].reshape((states.shape[0], 1, states[0][0].shape[0]))
+                observation2 = states[:, 1].reshape((states.shape[0], 1, states[0][1].shape[0]))
+                self.beh_model.fit([observation1, observation2], targets, epochs=1, verbose=0)
             else:
                 self.beh_model.fit(inputs, targets, epochs=1, verbose=0)
 
