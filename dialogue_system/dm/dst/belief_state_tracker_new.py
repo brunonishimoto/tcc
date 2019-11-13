@@ -8,7 +8,7 @@ import pickle
 import random
 
 
-class BeliefStateTracker:
+class BeliefStateTrackerNew:
     """Tracks the state of the episode/conversation and prepares the state representation for the agent."""
 
     def __init__(self, config):
@@ -70,6 +70,7 @@ class BeliefStateTracker:
             self.current_informs.append({})
         # A list of the dialogues (dicts) by the agent and user so far in the conversation
         self.round_num = 0
+        self.history_states = np.zeros(self.get_state_size())
 
     def print_history(self):
         """Helper function if you want to see the current history action by action."""
@@ -91,6 +92,9 @@ class BeliefStateTracker:
         kb_results = self.db_helper.get_db_results(self.current_informs[0])
         return kb_results
 
+    def get_history_states(self):
+        return self.history_states
+
     def get_state(self, done=False):
         """
         Returns the state representation as a numpy array which is fed into the agent's neural network.
@@ -108,7 +112,7 @@ class BeliefStateTracker:
 
         # If done then fill state with zeros
         if done:
-            return self.none_stat[1]e
+            return self.none_state
 
         # Representations that use user action
         n_best_last_user_action = self.history[-1]
@@ -191,6 +195,9 @@ class BeliefStateTracker:
             [user_act_rep, user_inform_slots_rep, user_request_slots_rep, agent_act_rep, agent_inform_slots_rep,
              agent_request_slots_rep, current_slots_rep, turn_rep, turn_onehot_rep, kb_binary_rep,
              kb_count_rep]).flatten()
+
+        self.history_states = np.roll(self.history_states, -1, axis=0)
+        self.history_states[-1] = state_representation
 
         return state_representation
 

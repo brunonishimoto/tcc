@@ -44,7 +44,7 @@ class DialogueSystem:
 
     def run_round(self, step=None, use_rule=False, train=True):
         # 1) Agent takes action given state tracker's representation of dialogue (state)
-        agent_action_index, agent_action = self.agent.get_action(self.state, step=step, use_rule=use_rule, train=train)
+        agent_action_index, agent_action = self.agent.get_action(self.state_tracker.get_history_states(), step=step, use_rule=use_rule, train=train)
 
         # 2) Update state tracker with the agent's action
         self.state_tracker.update_state_agent(agent_action)

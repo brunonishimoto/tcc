@@ -12,7 +12,7 @@ import os
 # Note: In original paper's code the epsilon is not annealed and annealing is not implemented in this code either
 
 
-class DRQNAgent:
+class DRQNAgentNew:
     """The DQN agent that interacts with the user."""
 
     def __init__(self, config):
@@ -248,10 +248,10 @@ class DRQNAgent:
                 traces.append(episode[start_point:start_point + self.trace_length])
 
             traces = np.array(traces)
-            batch = np.reshape(traces, [self.batch_size, self.trace_length, 5])
+            batch = np.reshape(traces, [self.batch_size * self.trace_length, 5])
 
-            states = batch[:, :, 0]
-            next_states = batch[:, :, 3]
+            states = np.array([sample[0] for sample in batch])
+            next_states = np.array([sample[3] for sample in batch])
 
             states = np.resize(states, (self.batch_size, *self.state_size))
             next_states = np.resize(next_states, (self.batch_size, *self.state_size))
@@ -266,19 +266,19 @@ class DRQNAgent:
                 tar_next_state_preds = self._dqn_predict(next_states, target=True)  # For target value for DQN (& DDQN)
 
             inputs = np.zeros((self.batch_size, *self.state_size))
-            targets = np.zeros((self.batch_size, self.num_actions))
+            targets = np.zeros((self.batch_size, *(self.trace_length, self.num_actions)))
 
             for i, (s, a, r, s_, d) in enumerate(batch):
                 for step in range(self.trace_length):
-                    t = beh_state_preds[i]
+                    t = beh_state_preds[i // 16][step]
                     if not self.vanilla:
-                        t[a] = r + self.gamma * tar_next_state_preds[i][np.argmax(beh_next_states_preds[i])] * (not d)
+                        t[a] = r + self.gamma * tar_next_state_preds[i // 16][np.argmax(beh_next_states_preds[i // 16][step])] * (not d)
                     else:
-                        t[a] = r + self.gamma * np.amax(tar_next_state_preds[i]) * (not d)
+                        t[a] = r + self.gamma * np.amax(tar_next_state_preds[i // 16][step]) * (not d)
 
-                    inputs[i][step] = s
-                    targets[i] = t
-            
+                    inputs[i // 16][step] = s
+                    targets[i // 16][step] = t
+
             self.beh_model.fit(inputs, targets, epochs=1, verbose=0)
 
     def copy(self):
