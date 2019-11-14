@@ -397,7 +397,12 @@ class BeliefStateTrackerNew:
     def __rank_actions(self, n_best_actions):
         scores = [1 - self.error_prob, (2 * self.error_prob) / 3, self.error_prob / 3]
 
-        ranked_actions = np.random.choice(n_best_actions, len(n_best_actions), replace=False, p=scores)
+        ranked_actions = copy.deepcopy(n_best_actions)
+        choice = np.random.choice(3, p=scores)
+        
+        ranked_actions[0] = copy.deepcopy(n_best_actions[choice])
+        ranked_actions[choice] = copy.deepcopy(n_best_actions[0])
+
 
         return ranked_actions
 
