@@ -276,23 +276,23 @@ class BeliefStateTrackerNew:
         """
 
         n_best_actions = self.__generate_noise_user_actions(user_action)
-        ranked_actions = self.__rank_actions(n_best_actions)
-        for idx, action in enumerate(ranked_actions):
+        # ranked_actions = self.__rank_actions(n_best_actions)
+        for idx, action in enumerate(n_best_actions):
             for key, value in action[const.INFORM_SLOTS].items():
                 self.current_informs[idx][key] = value
         user_action.update({const.ROUND: self.round_num + 1, const.SPEAKER_TYPE: const.USR_SPEAKER_VAL})
-        self.history.append(ranked_actions)
+        self.history.append(n_best_actions)
         self.round_num += 1
 
     def __generate_noise_user_actions(self, user_action):
         n_best_confused_actions = []
-        # n_best_confused_actions.append(cfg.correct)
+        n_best_confused_actions.append(cfg.correct)
         n_best_confused_actions.append(user_action)
-        for i in range(1, self.n_best):
+        for i in range(2, self.n_best):
             n_best_confused_actions.append(self.__create_wrong_action(user_action))
 
-        choice = np.random.randint(1, self.n_best)
-        n_best_confused_actions[choice] = cfg.correct
+        # choice = np.random.randint(1, self.n_best)
+        # n_best_confused_actions[choice] = cfg.correct
 
         return n_best_confused_actions
 
