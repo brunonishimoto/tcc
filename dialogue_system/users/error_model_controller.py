@@ -40,9 +40,9 @@ class ErrorModelController:
             frame (dict): format dicconst.INTENTntent': '', 'inform_slots': {}, 'request_slots': {}, 'round': int,
                           'speaker': 'User')
         """
+        cfg.correct = frame
         if self.slot_error_prob > 0:
             informs_dict = frame[const.INFORM_SLOTS]
-            cfg.correct = frame
             for key in list(frame[const.INFORM_SLOTS].keys()):
                 if key == cfg.usersim_default_key:
                     continue
