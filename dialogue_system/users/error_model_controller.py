@@ -2,6 +2,7 @@ import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
 import numpy as np
 import random
+import copy
 import pickle
 
 from utils.util import log
@@ -40,7 +41,7 @@ class ErrorModelController:
             frame (dict): format dicconst.INTENTntent': '', 'inform_slots': {}, 'request_slots': {}, 'round': int,
                           'speaker': 'User')
         """
-        cfg.correct = frame
+        cfg.correct = copy.deepcopy(frame)
         if self.slot_error_prob > 0:
             informs_dict = frame[const.INFORM_SLOTS]
             for key in list(frame[const.INFORM_SLOTS].keys()):

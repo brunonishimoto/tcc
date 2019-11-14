@@ -286,13 +286,13 @@ class BeliefStateTrackerNew:
 
     def __generate_noise_user_actions(self, user_action):
         n_best_confused_actions = []
-        n_best_confused_actions.append(cfg.correct)
+        # n_best_confused_actions.append(cfg.correct)
         n_best_confused_actions.append(user_action)
         for i in range(2, self.n_best):
             n_best_confused_actions.append(self.__create_wrong_action(user_action))
 
-        # choice = np.random.randint(1, self.n_best)
-        # n_best_confused_actions[choice] = cfg.correct
+        choice = np.random.randint(1, self.n_best)
+        n_best_confused_actions[choice] = cfg.correct
 
         return n_best_confused_actions
 
