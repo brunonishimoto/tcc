@@ -33,6 +33,7 @@ class BeliefStateTrackerNew:
         self.movie_dict = pickle.load(open(dict_path, 'rb'), encoding='latin1')
 
         self.n_best = config['dst']['n_best']
+        self.error_prob = config['emc']['slot_error_prob']
         self.num_sequences = config['dst']['num_sequences']
         self.intent_error_prob = config['dst']['intent_error_prob']
         self.value_error_prob = config['dst']['value_error_prob']
@@ -286,13 +287,17 @@ class BeliefStateTrackerNew:
 
     def __generate_noise_user_actions(self, user_action):
         n_best_confused_actions = []
-        # n_best_confused_actions.append(cfg.correct)
-        n_best_confused_actions.append(user_action)
+        if np.random.random() <= 1 - self.error_prob:
+            n_best_confused_actions.append(user_action)
+            n_best_confused_actions.append(cfg.correct)
+        else:
+            n_best_confused_actions.append(cfg.correct)
+            n_best_confused_actions.append(user_action)
         for i in range(2, self.n_best):
             n_best_confused_actions.append(self.__create_wrong_action(user_action))
 
-        choice = np.random.randint(1, self.n_best)
-        n_best_confused_actions[choice] = cfg.correct
+        # choice = np.random.randint(1, self.n_best)
+        # n_best_confused_actions[choice] = cfg.correct
 
         return n_best_confused_actions
 
