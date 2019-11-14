@@ -42,14 +42,12 @@ class ErrorModelController:
         """
         if self.slot_error_prob > 0:
             informs_dict = frame[const.INFORM_SLOTS]
-            make_error = False
             cfg.correct = frame
             for key in list(frame[const.INFORM_SLOTS].keys()):
                 if key == cfg.usersim_default_key:
                     continue
                 assert key in self.movie_dict
                 if random.random() < self.slot_error_prob:
-                    make_error = True
                     if self.slot_error_mode == 0:  # replace the slot_value only
                         self.__slot_value_noise(key, informs_dict)
                     elif self.slot_error_mode == 1:  # replace slot and its values
@@ -64,9 +62,8 @@ class ErrorModelController:
                             self.__slot_noise(key, informs_dict)
                         elif choice == 2:
                             self.__slot_remove(key, informs_dict)
-            if random.random() < self.intent_error_prob:  # add noise for intent level
-                frame[const.INTENT] = random.choice(self.intents)
-        cfg.config = make_error
+        if random.random() < self.intent_error_prob:  # add noise for intent level
+            frame[const.INTENT] = random.choice(self.intents)
 
         return frame
 
