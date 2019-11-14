@@ -443,6 +443,6 @@ class BeliefStateTrackerNew:
                         else:
                             score -= 0.5
 
-                scores.append(score)
+            scores.append(score)
 
         return np.flip(np.array(n_best_actions).take(np.argsort(scores)))
