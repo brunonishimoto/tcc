@@ -406,9 +406,9 @@ class BeliefStateTrackerNew:
                 for key, value in action[const.INFORM_SLOTS].items():
                     if key in self.current_informs:
                         if self.current_informs[key] == value:
-                            score[i] -= 1.5
+                            score -= 1.5
                         else:
-                            score[i] -= 1
+                            score -= 1
                     new_current_informs[key] = value
 
                 new_db_results_dict = self.db_helper.get_db_results_for_slots(new_current_informs)
@@ -416,32 +416,32 @@ class BeliefStateTrackerNew:
                 # If there are no matches on db with this action
                 if action[const.INTENT] == const.INFORM:
                     if new_db_results_dict[const.KB_MATCHING_ALL_CONSTRAINTS] == 0:
-                        score[i] -= 1.0
+                        score -= 1.0
                     else:
-                        score[i] += 1.0
+                        score += 1.0
                 elif action[const.INTENT] == const.REQUEST:
                     for key, value in action[const.REQUEST_SLOTS].items():
                         if key in self.current_informs:
-                            score[i] -=1.0
+                            score -=1.0
 
-                # Score[i] based on the last agent action
+                # Score based on the last agent action
                 if last_agent_action:
                     if last_agent_action[const.INTENT] == const.INFORM_SLOTS:
                         if action[const.INTENT] == const.REQUEST:
-                            score[i] += 1.0
+                            score += 1.0
                         elif action[const.INTENT] == const.INFORM:
-                            score[i] += 0.5
+                            score += 0.5
                         else:
-                            score[i] -= 0.5
+                            score -= 0.5
                     elif last_agent_action[const.INTENT] == const.REQUEST:
                         if action[const.INTENT] == const.INFORM:
-                            score[i] += 1.0
+                            score += 1.0
                         elif action[const.INTENT] == const.REQUEST:
-                            score[i] += 0.5
+                            score += 0.5
                         elif action[const.INTENT] == const.THANKS:
-                            score[i] += 0.1
+                            score += 0.1
                         else:
-                            score[i] -= 0.5
+                            score -= 0.5
 
                 scores.append(score)
 
