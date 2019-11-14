@@ -1,0 +1,80 @@
+{
+  "use_nl": false,
+  "real_user": false,
+  "recurrent": false,
+  "runner": {
+    "name": "Trainer"
+  },
+  "user": {
+    "name": "RuleBasedUserSimulator",
+    "give_goal": false
+  },
+  "db_file_paths": {
+    "database": "data/movie_db.p",
+    "dict": "data/slot_dict.v1.p",
+    "user_goals": "data/movie_user_goals.p"
+  },
+  "run": {
+    "warmup_mem": 1000,
+    "num_ep_run": 10000,
+    "num_ep_test": 500,
+    "train_freq": 100,
+    "max_round_num": 20,
+    "split_ratio": 1.0,
+    "sigma_init": 0,
+    "sigma_stop": 0,
+    "sigma_decay": 3000,
+    "success_rate_threshold": 0.3,
+    "performance_path": "checkpoints/belief_3/performance.json"
+  },
+  "dst": {
+    "name": "BeliefStateTrackerNew",
+    "n_best": 3,
+    "num_sequences": 2,
+    "value_error_prob": 0.4,
+    "slot_error_prob": 0.3,
+    "miss_error_prob": 0.3,
+    "intent_error_prob": 0.2
+  },
+  "agent": {
+    "name": "DQNSoftmax",
+    "save_weights_file_path": "weights/dm/belief_3/model.h5",
+    "load_weights_file_path": "",
+    "vanilla": true,
+    "batch_size": 16,
+    "tau_init": 2.0,
+    "tau_stop": 0.5,
+    "tau_decay": 4000,
+    "gamma": 0.9,
+    "max_mem_size": 50000,
+    "model": {
+      "name": "DQNModel",
+      "dqn_hidden_size": 80,
+      "activation": "relu",
+      "activation_out": "linear",
+      "loss": "mse",
+      "learning_rate": 1e-3,
+      "lr_decay": 0
+    }
+  },
+  "nlu": {
+    "name": "NLUBaseline",
+    "model_path": "weights/nlu/lstm_[1468447442.91]_39_80_0.921.p",
+    "vocab_path": "data/vocab",
+    "layer_size": 64,
+    "model_type": "full",
+    "batch_size": 16,
+    "max_epochs": 20
+  },
+  "nlg": {
+    "name": "NLG",
+    "load_weights_file_path": "weights/nlg/lstm_tanh_relu_[1468202263.38]_2_0.610.p",
+    "load_predefined_file_path": "data/dia_act_nl_pairs.v7.json",
+    "beam_size": 10
+  },
+  "emc": {
+    "slot_error_mode": 3,
+    "slot_error_prob": 0.3,
+    "intent_error_prob": 0
+  }
+}
