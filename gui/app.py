@@ -14,10 +14,10 @@ class Application:
     def __init__(self, master=None):
         self.master = master
 
-        self.frame_left = Frame(self.master, bg="gray")
+        self.frame_left = Frame(self.master, bg="#aaaaaa", borderwidth=1, relief=SOLID)
         # self.frame_left.grid(column=0, row=0)
         self.frame_left.pack(side=LEFT, fill=Y)
-        self.frame_right = Frame(self.master)
+        self.frame_right = Frame(self.master, bg="#aaaaaa", borderwidth=1, relief=SOLID)
         # self.frame_right.grid(column=1, row=0)
         self.frame_right.pack(side=RIGHT, fill=Y)
 
@@ -189,7 +189,11 @@ class Application:
         dict_infos = {}
         for log in (logs):
             log = re.sub(r'INFO: (\d{2}/){2}\d{4} (\d{2}:?){3} (AM|PM) ', '', log)
-            log = log.replace("'", '"')
+            log = log.replace(" '", ' "')
+            log = log.replace("':", '":')
+            log = log.replace("',", '",')
+            log = log.replace("'}", '"}')
+            log = log.replace("{'", '{"')
             info, value = log.split(':', 1)
             dict_infos[info] = value
 
