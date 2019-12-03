@@ -94,6 +94,13 @@ class StateTracker:
 
         user_action = self.history[-1]
         db_results_dict = self.db_helper.get_db_results_for_slots(self.current_informs)
+        db_results = self.db_helper.get_db_results(self.current_informs)
+        list_results = []
+        for idx in list(db_results):
+            list_results.append(db_results[idx])
+        log(['dialogue'], f"DB results: {list_results}")
+        log(['dialogue'], f"DB count: {db_results_dict}")
+        log(['dialogue'], f"Current informs: {self.current_informs}")
         last_agent_action = self.history[-2] if len(self.history) > 1 else None
 
         # Create one-hot of intents to represent the current user action

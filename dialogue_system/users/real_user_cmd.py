@@ -1,6 +1,10 @@
 import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
 
+import pickle
+import random
+import json
+
 
 class RealUserCMD():
     """Connects a real user to the conversation through the console."""
@@ -9,9 +13,17 @@ class RealUserCMD():
         """
         The constructor for User.
 
+
         Parameters:
             config (dict): Loaded config as dict
         """
+
+        goals_path = config['db_file_paths']['user_goals']
+        self.goal_list = pickle.load(open(goals_path, 'rb'), encoding='latin1')
+
+        # Flag if we give a goal to the user
+        self.get_goal = config['user']['give_goal']
+
         self.max_round = config['run']['max_round_num']
 
     def reset(self, episode=0, train=True):
@@ -21,6 +33,13 @@ class RealUserCMD():
         Returns:
             dict: The user response
         """
+        self.__wait_start_command()
+
+
+        if self.get_goal:
+            sample_goal = random.choice(self.goal_list)
+
+            print(f"Your goal is:\n {json.dumps(sample_goal, indent=2)}")
 
         return self.__return_response()
 
@@ -43,8 +62,15 @@ class RealUserCMD():
 
         success = -2
         while success not in (-1, 0, 1):
-            success = int(input('Success?: '))
+            success = int(input(f"The agent could complete the task? -- (-1, 0 or 1) for (loss, neither loss nor win, win)\nAnswer: "))
         return success
+
+    def __wait_start_command(self):
+        command = None
+
+        while command != 'start':
+            command = input("Type 'start' to init a conversation: ").lower()
+
 
     def step(self, agent_action):
         """
@@ -73,15 +99,19 @@ class RealUserCMD():
         print(f'Agent Action: {agent_action}')
 
         done = False
+        success = const.NO_OUTCOME_YET
         user_response = {const.INTENT: '', const.REQUEST_SLOTS: {}, const.INFORM_SLOTS: {}}
 
         # First check round num, if equal to max then fail
-        if agent_action[const.ROUND] == self.max_round:
-            success = const.FAILED_DIALOG
-            user_response[const.INTENT] = const.THANKS
-        else:
+        # if agent_action[const.ROUND] == self.max_round:
+        #     success = const.FAILED_DIALOG
+        #     user_response[const.INTENT] = const.THANKS
+        # else:
+        if agent_action[const.INTENT] == const.THANKS:
             user_response = self.__return_response()
             success = self.__return_success()
+        else:
+            user_response = self.__return_response()
 
         if success == const.FAILED_DIALOG or success == const.SUCCESS_DIALOG:
             done = True

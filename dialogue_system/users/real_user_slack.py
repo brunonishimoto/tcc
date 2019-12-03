@@ -3,6 +3,7 @@ from utils.util import log
 
 import dialogue_system.dialogue_config as cfg
 import dialogue_system.constants as const
+import json
 import pickle
 import random
 import time
@@ -98,13 +99,15 @@ class RealUserSlack():
         Returns:
             dict: The user response
         """
+        self.__wait_start_command()
+
         if self.get_goal:
             sample_goal = random.choice(self.goal_list)
-
+            log(['dialogue'], f"Goal: {sample_goal}")
             self.slack_client.api_call(
                 "chat.postMessage",
                 channel=self.channel,
-                text=f"Your goal is:\n {sample_goal}"
+                text=f"Your goal is:\n {json.dumps(sample_goal, indent=2)}"
             )
 
         return self.__return_response()
@@ -140,6 +143,20 @@ class RealUserSlack():
             success = int(command)
         return success
 
+    def __wait_start_command(self):
+        command = None
+
+        self.slack_client.api_call(
+            "chat.postMessage",
+            channel=self.channel,
+            text=f"Type 'start' to init a conversation"
+        )
+        while command != 'start':
+            command = self.__parse_events(self.slack_client.rtm_read())
+            if command:
+                command.lower()
+            time.sleep(self.RTM_READ_DELAY)
+
     def step(self, agent_action):
         """
         Return the user's response, reward, done and success.
@@ -166,13 +183,6 @@ class RealUserSlack():
 
         log(['debug'], f'Agent Action: {agent_action}')
 
-        # Sends the response back to the channel
-        self.slack_client.api_call(
-            "chat.postMessage",
-            channel=self.channel,
-            text=agent_action['nl']
-        )
-
         done = False
         success = const.NO_OUTCOME_YET
         user_response = {const.INTENT: '', const.REQUEST_SLOTS: {}, const.INFORM_SLOTS: {}}
@@ -180,8 +190,19 @@ class RealUserSlack():
         # First check round num, if equal to max then fail
         if agent_action[const.ROUND] == self.max_round:
             success = const.FAILED_DIALOG
-            user_response[const.INTENT] = const.THANKS
+            self.slack_client.api_call(
+                "chat.postMessage",
+                channel=self.channel,
+                text="I'm sorry. I could not complete the dialog in the maximum number of rounds."
+            )
         else:
+            # Sends the response back to the channel
+            self.slack_client.api_call(
+                "chat.postMessage",
+                channel=self.channel,
+                text=agent_action['nl']
+            )
+
             if agent_action[const.INTENT] == const.THANKS:
                 user_response = self.__return_response()
                 success = self.__return_success()

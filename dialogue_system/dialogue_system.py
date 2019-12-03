@@ -2,6 +2,7 @@ import pickle
 import json
 import math
 import random
+import copy
 import collections
 
 import dialogue_system.users as users
@@ -37,20 +38,23 @@ class DialogueSystem:
 
         # 2) Update state tracker with the agent's action
         self.state_tracker.update_state_agent(agent_action)
+        log(['dialogue'], f'Agent action: {agent_action}')
         if self.use_nl:
             agent_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'agt')
-        agent_action = self.__transform_action(agent_action)
-        log(['dialogue'], f'Agent: {agent_action}')
+        # agent_action = self.__transform_action(agent_action)
+        log(['dialogue'], f"Agent sentence: {agent_action['nl']}")
 
         # 3) User takes action given agent action
         user_action, reward, done, success = self.user.step(agent_action)
-
+        log(['dialogue'], f"User sentence: {user_action['nl']}")
         if not done:
             # 4) Infuse error into semantic frame level of user action
             if self.use_nl and not self.real_user:
                 user_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'usr')
             user_action = self.__transform_action(user_action)
-            log(['debug', 'dialogue'], f'User: {user_action}')
+            aux = copy.deepcopy(user_action)
+            aux.pop('nl')
+            log(['dialogue'], f'User action: {aux}')
 
         # 5) Update state tracker with user action
         self.state_tracker.update_state_user(user_action)
@@ -76,11 +80,14 @@ class DialogueSystem:
         self.state_tracker.reset()
         # Then pick an init user action
         user_action = self.user.reset(episode, train)
+        log(['dialogue'], f"User sentence: {user_action['nl']}")
         if self.use_nl and not self.real_user:
             user_action['nl'] = self.nlg.convert_diaact_to_nl(user_action, 'usr')
         # if nl transform in frame, if frame use emc
         user_action = self.__transform_action(user_action)
-        log(['dialogue'], f'User: {user_action}')
+        aux = copy.deepcopy(user_action)
+        aux.pop('nl')
+        log(['dialogue'], f'User action: {aux}')
         # And update state tracker
         self.state_tracker.update_state_user(user_action)
         self.state = self.state_tracker.get_state()

@@ -17,7 +17,7 @@ def run(config_file='config.json'):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', dest='config_file', type=str, default='config_softmax.json')
+    parser.add_argument('--config_file', dest='config_file', type=str, default='config_softmax_slack.json')
     args = parser.parse_args()
     args = vars(args)
 

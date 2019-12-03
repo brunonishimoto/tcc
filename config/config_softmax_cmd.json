@@ -5,7 +5,7 @@
     "name": "Tester"
   },
   "user": {
-    "name": "RealUserSlack",
+    "name": "RealUserCMD",
     "give_goal": true
   },
   "db_file_paths": {
@@ -16,10 +16,10 @@
   "run": {
     "warmup_mem": 1000,
     "num_ep_run": 10000,
-    "num_ep_test": 500,
+    "num_ep_test": 1,
     "train_freq": 100,
     "max_round_num": 20,
-    "split_ratio": 0.90,
+    "split_ratio": 0.0,
     "sigma_init": 0,
     "sigma_stop": 0,
     "sigma_decay": 3000,

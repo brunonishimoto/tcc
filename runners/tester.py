@@ -30,7 +30,7 @@ class Tester:
         Terminates when the episode reaches NUM_EP_TEST.
         """
 
-        log(['dialogue', 'runner'], 'Testing Started...')
+        log(['runner'], 'Testing Started...')
 
         episode = 0
         period_metrics = {'reward': 0, 'success': 0, 'round': 0}
@@ -60,6 +60,6 @@ class Tester:
         self.performance_metrics['test']['avg_reward'] = period_metrics['reward'] / self.num_ep_test
         self.performance_metrics['test']['avg_round'] = period_metrics['round'] / self.num_ep_test
 
-        log(['dialogue', 'runner'], '...Testing Ended')
+        log(['runner'], '...Testing Ended')
 
         save_json_file(self.performance_path, self.performance_metrics, mode="a")

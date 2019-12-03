@@ -55,7 +55,7 @@ class Trainer:
         Loop terminates when the size of the memory is equal to WARMUP_MEM or when the memory buffer is full.
         """
 
-        log(['dialogue', 'runner'], 'Warmup started...')
+        log(['runner'], 'Warmup started...')
 
         total_step = 0
         episode = 0
@@ -83,7 +83,7 @@ class Trainer:
         # Test on the actual weights
         Tester(self.tester_config).run()
 
-        log(['dialogue', 'runner'], '...Warmup Ended')
+        log(['runner'], '...Warmup Ended')
 
     def __run_train(self):
         """
@@ -93,7 +93,7 @@ class Trainer:
         every episode that TRAIN_FREQ is a multiple of. Terminates when the episode reaches NUM_EP_TRAIN.
         """
 
-        log(['dialogue', 'runner'], 'Training Started...')
+        log(['runner'], 'Training Started...')
 
         episode = 0
         period_metrics = {'reward': 0, 'success': 0, 'round': 0}
@@ -158,7 +158,7 @@ class Trainer:
 
             episode += 1
 
-        log(['dialogue', 'runner'], '...Training Ended')
+        log(['runner'], '...Training Ended')
 
         save_json_file(self.performance_path, self.performance_metrics)
 

@@ -52,7 +52,7 @@ class NLUSlotGated:
 
     def generate_dia_act(self, annot):
         if len(annot) > 0:
-            log(["dialogue", "runner", "debug"], f'Sentence: {annot}')
+            log(["runner", "debug"], f'Sentence: {annot}')
             tmp_annot = annot.strip('.').strip('?').strip(',').strip('!')
 
             with tf.compat.v1.Session() as sess:
@@ -81,18 +81,17 @@ class NLUSlotGated:
                 for intent in ret[0]:
                     pred_intents.append(self.intent_vocab['rev'][np.argmax(intent)])
 
-                log(["dialogue", "runner", "debug"], f"Intent: {pred_intents[0]}")
+                log(["runner", "debug"], f"Intent: {pred_intents[0]}")
 
                 pred_slots = []
                 for slot in ret[1]:
                     pred = np.argmax(slot)
                     pred_slots.append(self.slot_vocab['rev'][pred])
-                log(["dialogue", "runner", "debug"], f"IOB format: {pred_slots}")
+                log(["runner", "debug"], f"IOB format: {pred_slots}")
 
                 pred_tags = pred_slots + pred_intents
-                print(pred_tags)
                 diaact = self.parse_nlu_to_diaact(pred_tags, tmp_annot)
-                log(["dialogue", "runner", "debug"], f"Diaact: {diaact}")
+                log(["runner", "debug"], f"Diaact: {diaact}")
                 return diaact
         else:
             return None

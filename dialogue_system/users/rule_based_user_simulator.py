@@ -88,7 +88,7 @@ class RuleBasedUserSimulator:
         else:
             sample_goal = self.test_list[episode % len(self.test_list)]
             # sample_goal = random.choice(self.test_list)
-        log(['dialogue'], f'\nUser Goal: {sample_goal}\n')
+        # log(['dialogue'], f'\nUser Goal: {sample_goal}\n')
         return sample_goal
 
     def __return_init_action(self):
@@ -177,7 +177,7 @@ class RuleBasedUserSimulator:
         if self.max_round > 0 and agent_action[const.ROUND] == self.max_round:
             done = True
             success = const.FAILED_DIALOG
-            self.state[const.INTENT] = const.THANKS
+            self.state[const.INTENT] = const.CLOSING
             self.state[const.REQUEST_SLOTS].clear()
         else:
             agent_intent = agent_action[const.INTENT]
@@ -205,12 +205,12 @@ class RuleBasedUserSimulator:
             #     self.__response_confirm_answer(agent_action)
             elif agent_intent == const.DENY:
                 success = const.FAILED_DIALOG
-                self.state[const.INTENT] = const.THANKS
+                self.state[const.INTENT] = const.CLOSING
                 self.state[const.REQUEST_SLOTS].clear()
                 done = True
-            elif agent_intent == const.THANKS:
+            elif agent_intent == const.THANKS or agent_intent == const.CLOSING:
                 success = self.__response_to_done()
-                self.state[const.INTENT] = const.THANKS
+                self.state[const.INTENT] = const.CLOSING
                 self.state[const.REQUEST_SLOTS].clear()
                 done = True
 
