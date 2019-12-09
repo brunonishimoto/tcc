@@ -81,7 +81,7 @@ class Trainer:
         self.dialogue_system.agent.save_weights()
 
         # Test on the actual weights
-        Tester(self.tester_config).run()
+        # Tester(self.tester_config).run()
 
         log(['runner'], '...Warmup Ended')
 
@@ -154,7 +154,7 @@ class Trainer:
                 save_json_file(self.performance_path, self.performance_metrics)
 
                 # Test on the actual weights
-                Tester(self.tester_config).run()
+                # Tester(self.tester_config).run()
 
             episode += 1
 

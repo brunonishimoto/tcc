@@ -10,16 +10,16 @@
   },
   "db_file_paths": {
     "database": "data/movie_db.p",
-    "dict": "data/movie_dict.p",
+    "dict": "data/slot_dict.v1.p",
     "user_goals": "data/movie_user_goals.p"
   },
   "run": {
     "warmup_mem": 1000,
-    "num_ep_run": 10000,
+    "num_ep_run": 15000,
     "num_ep_test": 500,
     "train_freq": 100,
     "max_round_num": 20,
-    "split_ratio": 0.90,
+    "split_ratio": 1.0,
     "sigma_init": 0,
     "sigma_stop": 0,
     "sigma_decay": 3000,

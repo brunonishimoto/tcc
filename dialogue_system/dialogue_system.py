@@ -42,11 +42,11 @@ class DialogueSystem:
         if self.use_nl:
             agent_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'agt')
         # agent_action = self.__transform_action(agent_action)
-        log(['dialogue'], f"Agent sentence: {agent_action['nl']}")
+        log(['dialogue'], f"Agent sentence: {agent_action.get('nl', None)}")
 
         # 3) User takes action given agent action
         user_action, reward, done, success = self.user.step(agent_action)
-        log(['dialogue'], f"User sentence: {user_action['nl']}")
+        log(['dialogue'], f"User sentence: {user_action.get('nl', None)}")
         if not done:
             # 4) Infuse error into semantic frame level of user action
             if self.use_nl and not self.real_user:
@@ -80,7 +80,7 @@ class DialogueSystem:
         self.state_tracker.reset()
         # Then pick an init user action
         user_action = self.user.reset(episode, train)
-        log(['dialogue'], f"User sentence: {user_action['nl']}")
+        log(['dialogue'], f"User sentence: {user_action.get('nl', None)}")
         if self.use_nl and not self.real_user:
             user_action['nl'] = self.nlg.convert_diaact_to_nl(user_action, 'usr')
         # if nl transform in frame, if frame use emc
