@@ -51,13 +51,13 @@ class DialogueSystem:
             # 4) Infuse error into semantic frame level of user action
             if self.use_nl and not self.real_user:
                 user_action['nl'] = self.nlg.convert_diaact_to_nl(user_action, 'usr')
-            user_action = self.__transform_action(user_action)
-            aux = copy.deepcopy(user_action)
-            try:
-                aux.pop('nl')
-            except:
-                pass
-            log(['dialogue', 'debug'], f'User action: {aux}')
+        user_action = self.__transform_action(user_action)
+        aux = copy.deepcopy(user_action)
+        try:
+            aux.pop('nl')
+        except:
+            pass
+        log(['dialogue', 'debug'], f'User action: {aux}')
 
         # 5) Update state tracker with user action
         self.state_tracker.update_state_user(user_action)

@@ -208,7 +208,7 @@ class RuleBasedUserSimulator:
                 self.state[const.INTENT] = const.CLOSING
                 self.state[const.REQUEST_SLOTS].clear()
                 done = True
-            elif agent_intent == const.THANKS or agent_intent == const.CLOSING:
+            elif agent_intent == const.CLOSING:
                 success = self.__response_to_done()
                 self.state[const.INTENT] = const.CLOSING
                 self.state[const.REQUEST_SLOTS].clear()

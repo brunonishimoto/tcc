@@ -25410,8 +25410,8 @@
       {
         "request_slots": [], 
         "nl": {
-          "agt": "Thank you, bye!:abanando:", 
-          "usr": "Thank you :abanando:"
+          "agt": "Thank you, bye! :wave:", 
+          "usr": "Thank you :wave:"
         }, 
         "inform_slots": []
       }, 

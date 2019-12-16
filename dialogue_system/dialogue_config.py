@@ -32,11 +32,11 @@ agent_request_slots = ['moviename', 'theater', 'starttime', 'date', 'numberofpeo
 agent_actions = [
     {'intent': 'greeting', 'inform_slots': {}, 'request_slots': {}},
     {'intent': 'match_found', 'inform_slots': {}, 'request_slots': {}},
-    {'intent': 'thanks', 'inform_slots': {}, 'request_slots': {}},
+    # {'intent': 'thanks', 'inform_slots': {}, 'request_slots': {}},
     {'intent': 'closing', 'inform_slots': {}, 'request_slots': {}},
     # {'intent':"confirm_answer", 'inform_slots':{}, 'request_slots':{}},
     # {'intent':"confirm_question", 'inform_slots':{}, 'request_slots':{}},
-    {'intent':"deny", 'inform_slots':{}, 'request_slots':{}},
+    # {'intent':"deny", 'inform_slots':{}, 'request_slots':{}},
 ]
 
 for slot in agent_inform_slots:

@@ -30,7 +30,7 @@ class RealUserSlack():
         self.max_round = config['run']['max_round_num']
 
         # instantiate Slack client
-        self.slack_client = SlackClient('xoxb-628422054787-639344980276-LWiCzmjAEvNHp7ERoWcicdpP')
+        self.slack_client = SlackClient('xoxb-628422054787-639344980276-LsfpqMrTJMNhsisl2fIDMpxH')
 
         # starterbot's user ID in Slack: value is assigned after the bot starts up
         self.starterbot_id = None
@@ -103,7 +103,8 @@ class RealUserSlack():
         self.__wait_start_command()
 
         if self.get_goal:
-            sample_goal = random.choice(self.goal_list)
+            # sample_goal = random.choice(self.goal_list)
+            sample_goal = {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'amc pacific place 11 theater', 'starttime': '9:00 pm', 'date': 'tomorrow', 'moviename': 'deadpool'}}
             log(['dialogue'], f"Goal: {sample_goal}")
             self.slack_client.api_call(
                 "chat.postMessage",
@@ -195,7 +196,7 @@ class RealUserSlack():
             self.slack_client.api_call(
                 "chat.postMessage",
                 channel=self.channel,
-                text="I'm sorry. I could not complete the dialog in the maximum number of rounds. :confuso:"
+                text="I'm sorry. I could not complete the dialog in the maximum number of rounds. ::confused:"
             )
         else:
             # Sends the response back to the channel
@@ -207,14 +208,15 @@ class RealUserSlack():
 
             if agent_action[const.INTENT] == const.CLOSING or agent_action[const.INTENT] == const.THANKS:
                 user_response = self.__return_response()
-                success = self.__return_success()
+                # success = self.__return_success()
+                done = True
             else:
                 user_response = self.__return_response()
 
             # log(['debug'], f"User: {user_response} ---- sucess: {success}")
 
-        if success == const.FAILED_DIALOG or success == const.SUCCESS_DIALOG:
-            done = True
+        # if success == const.FAILED_DIALOG or success == const.SUCCESS_DIALOG:
+        #     done = True
 
         reward = self.__reward_function(success)
 

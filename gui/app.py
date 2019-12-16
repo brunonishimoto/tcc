@@ -208,7 +208,7 @@ root = Tk()
 
 # Changing the title of the root
 root.title("Sistema de Diálogo")
-root.geometry("1260x900")
+root.geometry("1920x1080")
 
 app = Application(root)
 root.mainloop()
