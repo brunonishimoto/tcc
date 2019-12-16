@@ -135,7 +135,7 @@ class Trainer:
                     self.dialogue_system.agent.empty_memory()
 
                 # Update current best success rate
-                if success_rate > best_success_rate:
+                if success_rate >= best_success_rate:
                     log(['runner'], f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
                     best_success_rate = success_rate
                     self.dialogue_system.agent.save_weights()

@@ -52,7 +52,7 @@ rule_requests = ['moviename', 'starttime', 'city', 'date', 'theater', 'numberofp
 rule_informs = ['moviename', 'theater']
 
 # These are possible inform slot keys that cannot be used to query
-no_query_keys = ['numberofpeople', 'taskcomplete', 'greeting', 'closing', usersim_default_key]
+no_query_keys = ['numberofpeople', 'greeting', 'closing', usersim_default_key]
 
 #######################################
 # Global config

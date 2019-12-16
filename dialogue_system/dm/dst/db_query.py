@@ -86,7 +86,7 @@ class DBQuery:
                 continue
 
             if slot == 'ticket' or slot == const.TASK_COMPLETE_SLOT:
-                filled_in_slots[slot] = dialog_config.TICKET_AVAILABLE if len(kb_results)>0 else const.NO_MATCH
+                filled_in_slots[slot] = const.TICKET_AVAILABLE if len(kb_results)>0 else const.NO_MATCH
                 continue
 
             if slot == const.THANKS: continue

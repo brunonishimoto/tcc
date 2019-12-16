@@ -62,6 +62,8 @@ class NLG:
         sentence = ""
         boolean_in = False
 
+        dia_act = copy.deepcopy(dia_act)
+        
         if dia_act[const.INTENT] == const.MATCH_FOUND:
             dia_act[const.INTENT] = const.INFORM
             dia_act[const.INFORM_SLOTS].update({const.TASK_COMPLETE_SLOT: dia_act[const.INFORM_SLOTS]['ticket']})
@@ -80,7 +82,7 @@ class NLG:
                     break
 
         if dia_act[const.INTENT] == const.INFORM and const.TASK_COMPLETE_SLOT in dia_act[const.INFORM_SLOTS].keys() and dia_act[const.INFORM_SLOTS][const.TASK_COMPLETE_SLOT] == const.NO_MATCH:
-            sentence = "Oh sorry, there is no ticket available."
+            sentence = "Oh sorry, there is no ticket available. :arrependido:"
 
         if boolean_in == False: sentence = self.translate_diaact(dia_act)
         return sentence
@@ -183,7 +185,7 @@ class NLG:
             elif slot_val == const.I_DO_NOT_CARE:
                 counter += 1
                 sentence = sentence.replace(f'${slot}$', '', 1)
-                continues
+                continue
 
             sentence = sentence.replace(f'${slot}$', slot_val, 1)
 

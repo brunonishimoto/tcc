@@ -44,8 +44,9 @@ class RealUserSlack():
             # Read bot's user ID by calling Web API method `auth.test`
             self.starterbot_id = self.slack_client.api_call("auth.test")["user_id"]
 
-            # self.channel = self.__get_channel('geral')
-            self.channel = "DJTA4UUSY"
+            # self.channel = "CJVLHDT55" #geral
+            self.channel = "CRS3F74NS" #go-bot
+            # self.channel = "DJTA4UUSY"
         else:
             log(['debug'], "Connection failed")
             exit()
@@ -79,7 +80,7 @@ class RealUserSlack():
                 user_id, message = self.__parse_direct_mention(event["text"])
                 if user_id == self.starterbot_id:
                     return message, event["channel"]
-                if event["channel"] == "DJTA4UUSY":
+                if event["channel"] == self.channel:
                     return event["text"], event["channel"]
         return None
 
@@ -135,12 +136,13 @@ class RealUserSlack():
         self.slack_client.api_call(
             "chat.postMessage",
             channel=self.channel,
-            text=f"The agent could complete the task? -- (-1, 0 or 1) for (loss, neither loss nor win, win)"
+            text=f"The agent could complete the task? -- (0 or 1) for (no, yes)"
         )
-        while success not in (-1, 0, 1):
+        while success not in (0, 1):
 
             command = self.__parse_events(self.slack_client.rtm_read())
-            success = int(command)
+            if command:
+                success = int(command)
         return success
 
     def __wait_start_command(self):
@@ -181,7 +183,7 @@ class RealUserSlack():
             assert value != const.PLACEHOLDER
         # ---------------
 
-        log(['debug'], f'Agent Action: {agent_action}')
+        # log(['debug'], f'Agent Action: {agent_action}')
 
         done = False
         success = const.NO_OUTCOME_YET
@@ -193,7 +195,7 @@ class RealUserSlack():
             self.slack_client.api_call(
                 "chat.postMessage",
                 channel=self.channel,
-                text="I'm sorry. I could not complete the dialog in the maximum number of rounds."
+                text="I'm sorry. I could not complete the dialog in the maximum number of rounds. :confuso:"
             )
         else:
             # Sends the response back to the channel
@@ -203,7 +205,7 @@ class RealUserSlack():
                 text=agent_action['nl']
             )
 
-            if agent_action[const.INTENT] == const.THANKS:
+            if agent_action[const.INTENT] == const.CLOSING or agent_action[const.INTENT] == const.THANKS:
                 user_response = self.__return_response()
                 success = self.__return_success()
             else:

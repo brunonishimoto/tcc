@@ -62,7 +62,7 @@ class Application:
                 #    bg = "red",
                    text="",
                    font="Helvetica 16",
-                   wraplength=150)
+                   wraplength=300)
 
         # user.pack(side=LEFT)
         user.grid(column=0, row=1)
@@ -86,7 +86,7 @@ class Application:
                 #    bg = "red",
                    text="",
                    font="Helvetica 16",
-                   wraplength=150)
+                   wraplength=300)
 
         # dm.pack(side=RIGHT)
         dm.grid(row=1, column=2)
@@ -131,7 +131,7 @@ class Application:
                      height=10,
                      anchor="n",
                      font="Helvetica 16",
-                     wraplength=290)
+                     wraplength=600)
         # goal.grid(row=0)
         goal.pack(side=TOP, fill=X)
 
@@ -145,7 +145,7 @@ class Application:
                    relief=RIDGE,
                    anchor="s",
                    font="Helvetica 16",
-                   wraplength=300)
+                   wraplength=600)
 
         button = Button(self.frame_right,
                         text="Ver resultados",
@@ -159,7 +159,7 @@ class Application:
         return db
 
     def load_db_results(self):
-        new_window = Toplevel(self.master, width=300)
+        new_window = Toplevel(self.master, width=700)
         new_window.title('Ingressos disponíveis')
 
         scrollbar = Scrollbar(new_window)

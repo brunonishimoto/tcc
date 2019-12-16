@@ -12,8 +12,11 @@ def action_to_string(action):
         for inform in inform_slots:
             inform_str += f"; '{inform}': {inform_slots[inform]}"
 
-        action_str = f"{intent}({'; '.join(request_slots)}{inform_str})"
-
+        if request_slots:
+            action_str = f"{intent}({'; '.join(request_slots)}{inform_str})"
+        else:
+            action_str = f"{intent}({inform_str[2:]})"
+            
         return action_str
 
     return action

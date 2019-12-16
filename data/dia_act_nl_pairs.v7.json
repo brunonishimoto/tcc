@@ -20045,12 +20045,10 @@
       {
         "request_slots": [], 
         "nl": {
-          "agt": "Hi", 
-          "usr": "Hi"
+          "agt": "Hi, welcome to GO-Bot, I'm here to help you find a movie. :smiley:", 
+          "usr": "Hi, welcome to GO-Bot, I'm here to help you find a movie. :smiley"
         }, 
-        "inform_slots": [
-          "numberofpeople"
-        ]
+        "inform_slots": []
       }
     ], 
     "confirm_question": [
@@ -25408,19 +25406,19 @@
         "inform_slots": []
       }
     ], 
-    "thanks": [
+    "closing": [
       {
         "request_slots": [], 
         "nl": {
-          "agt": "Thank you", 
-          "usr": "Thank you"
+          "agt": "Thank you, bye!:abanando:", 
+          "usr": "Thank you :abanando:"
         }, 
         "inform_slots": []
       }, 
       {
         "request_slots": [], 
         "nl": {
-          "agt": "Thank you, bye", 
+          "agt": "Thank you, bye :cara_abraço:", 
           "usr": "Thank you, goodbye"
         }, 
         "inform_slots": [

@@ -15,7 +15,7 @@
   },
   "run": {
     "warmup_mem": 1000,
-    "num_ep_run": 15000,
+    "num_ep_run": 40000,
     "num_ep_test": 500,
     "train_freq": 100,
     "max_round_num": 20,
@@ -31,7 +31,7 @@
   },
   "agent": {
     "name": "DQNSoftmax",
-    "save_weights_file_path": "weights/dm/warm_up-no_exp.h5",
+    "save_weights_file_path": "weights/dm/warm_up-no_exp_predator.h5",
     "load_weights_file_path": "",
     "vanilla": true,
     "batch_size": 16,
@@ -39,7 +39,7 @@
     "tau_stop": 0.5,
     "tau_decay": 4000,
     "gamma": 0.9,
-    "max_mem_size": 50000,
+    "max_mem_size": 40000,
     "model": {
       "name": "DQNModel",
       "dqn_hidden_size": 80,

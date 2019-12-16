@@ -38,7 +38,7 @@ class DialogueSystem:
 
         # 2) Update state tracker with the agent's action
         self.state_tracker.update_state_agent(agent_action)
-        log(['dialogue'], f'Agent action: {agent_action}')
+        log(['dialogue', 'debug'], f'Agent action: {agent_action}')
         if self.use_nl:
             agent_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'agt')
         # agent_action = self.__transform_action(agent_action)
@@ -50,11 +50,14 @@ class DialogueSystem:
         if not done:
             # 4) Infuse error into semantic frame level of user action
             if self.use_nl and not self.real_user:
-                user_action['nl'] = self.nlg.convert_diaact_to_nl(agent_action, 'usr')
+                user_action['nl'] = self.nlg.convert_diaact_to_nl(user_action, 'usr')
             user_action = self.__transform_action(user_action)
             aux = copy.deepcopy(user_action)
-            aux.pop('nl')
-            log(['dialogue'], f'User action: {aux}')
+            try:
+                aux.pop('nl')
+            except:
+                pass
+            log(['dialogue', 'debug'], f'User action: {aux}')
 
         # 5) Update state tracker with user action
         self.state_tracker.update_state_user(user_action)
@@ -86,7 +89,10 @@ class DialogueSystem:
         # if nl transform in frame, if frame use emc
         user_action = self.__transform_action(user_action)
         aux = copy.deepcopy(user_action)
-        aux.pop('nl')
+        try:
+            aux.pop('nl')
+        except:
+            pass
         log(['dialogue'], f'User action: {aux}')
         # And update state tracker
         self.state_tracker.update_state_user(user_action)
