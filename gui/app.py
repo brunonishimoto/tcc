@@ -38,6 +38,11 @@ class Application:
         for log in (logs):
             log = re.sub(r'INFO: (\d{2}/){2}\d{4} (\d{2}:?){3} (AM|PM) ', '', log)
             log = log.replace("'", '"')
+            log = log.replace("':", '":')
+            log = log.replace("',", '",')
+            log = log.replace("'}", '"}')
+            log = log.replace("{'", '{"')
+            log = log.replace("\\", "")
             if log:
                 info, value = log.split(':', 1)
                 dict_infos[info] = value
@@ -50,9 +55,11 @@ class Application:
         self.dm["text"] = action_to_string(dict_infos.get('Agent action', "{}"))
         self.nlg["text"] = dict_infos.get('Agent sentence', "")
 
-        if not self.goal["text"] or self.goal["text"] == '{}':
-            self.goal["text"] = goal_to_string(dict_infos.get('Goal', "{}"))
+        goal = goal_to_string(dict_infos.get('Goal', "{}"))
+        if goal:
+            self.goal["text"] = goal
 
+            
         self.db["text"] = informs_to_string(dict_infos.get('Current informs', "{}"), dict_infos.get('DB count', "{}"))
 
         self.master.after(1000, self.read_log)
@@ -131,7 +138,7 @@ class Application:
                      height=10,
                      anchor="n",
                      font="Helvetica 16",
-                     wraplength=600)
+                     wraplength=500)
         # goal.grid(row=0)
         goal.pack(side=TOP, fill=X)
 
@@ -145,7 +152,7 @@ class Application:
                    relief=RIDGE,
                    anchor="s",
                    font="Helvetica 16",
-                   wraplength=600)
+                   wraplength=500)
 
         button = Button(self.frame_right,
                         text="Ver resultados",
@@ -194,8 +201,11 @@ class Application:
             log = log.replace("',", '",')
             log = log.replace("'}", '"}')
             log = log.replace("{'", '{"')
-            info, value = log.split(':', 1)
-            dict_infos[info] = value
+            log = log.replace("\\", "")
+
+            if log:
+                info, value = log.split(':', 1) 
+                dict_infos[info] = value
 
         db_results = db_to_string(dict_infos['DB results'])
         # print(db_results)

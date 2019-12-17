@@ -23,6 +23,43 @@ class RealUserSlack():
 
         goals_path = config['db_file_paths']['user_goals']
         self.goal_list = pickle.load(open(goals_path, 'rb'), encoding='latin1')
+        self.goal_list = [
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '1', 'theater': 'carmike summit 16', 'state': 'al', 'starttime': 'around 2pm', 'date': 'today', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'amc pacific place 11 theater', 'starttime': '9:00 pm', 'date': 'tomorrow', 'moviename': 'deadpool'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '4', 'theater': 'carmike summit 16', 'state': 'al', 'starttime': 'around 6pm', 'date': 'today', 'moviename': 'deadpool'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:10 pm', 'date': 'tomorrow', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:30 pm', 'date': 'tomorrow', 'moviename': 'the witch'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:30 pm', 'date': 'tomorrow', 'moviename': 'the witch'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '6', 'theater': 'amc lowes oak tree', 'starttime': '7:10 pm', 'date': 'tomorrow', 'moviename': 'triple 9'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:10 pm', 'date': 'tomorrow', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '8:45 pm', 'date': 'tomorrow', 'moviename': 'the big short'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '8:45 pm', 'date': 'tomorrow', 'moviename': 'the big short'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:10 pm', 'date': 'tomorrow', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'amc lowes oak tree 6', 'starttime': '4:50 pm', 'date': 'tomorrow', 'moviename': 'race'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '3', 'theater': 'carmike summit 16', 'state': 'al', 'starttime': '2pm', 'date': 'saturday', 'moviename': 'deadpool'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:10 pm', 'date': 'tomorrow', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:10 pm', 'date': 'tomorrow', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '2', 'theater': 'carmike summit 16', 'state': 'al', 'starttime': 'around 2pm', 'date': 'today', 'moviename': 'london had fallen'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '2', 'theater': 'carmike summit 16', 'state': 'al', 'starttime': 'around 5pm', 'date': 'tomorrow', 'moviename': 'deadpool'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:00 pm', 'date': 'tomorrow', 'moviename': 'spotlight'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:00 pm', 'date': 'tomorrow', 'moviename': 'spotlight'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '2', 'theater': 'carmike 16', 'state': 'al', 'starttime': '2pm', 'date': 'today', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:00 pm', 'date': 'tomorrow', 'moviename': 'spotlight'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:10 pm', 'date': 'tomorrow', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'amc pacific place 11 theater', 'starttime': '9:00 pm', 'date': 'tomorrow', 'moviename': 'deadpool'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:10 pm', 'date': 'tomorrow', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '2', 'theater': 'carmike summit 16', 'state': 'al', 'starttime': 'around 2pm', 'date': 'sunday', 'moviename': 'deadpool'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '8:45 pm', 'date': 'tomorrow', 'moviename': 'big short'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:30 pm', 'date': 'tomorrow', 'moviename': 'the witch'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:10 pm', 'date': 'tomorrow', 'moviename': 'zootopia'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:00 pm', 'date': 'tomorrow', 'moviename': 'spotlight'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:30 pm', 'date': 'tomorrow', 'moviename': 'the witch'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'regal meridian 16', 'starttime': '9:30 pm', 'date': 'tomorrow', 'moviename': 'the witch'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '1', 'theater': 'carmike summit 16', 'state': 'al', 'starttime': '2pm', 'date': 'tomorrow', 'moviename': 'deadpool'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'birmingham', 'numberofpeople': '2', 'theater': 'carmike summit 16', 'state': 'al', 'starttime': 'around 2pm', 'date': 'thursday', 'moviename': 'deadpool'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '6', 'theater': 'amc lowes oak tree', 'starttime': '7:10 pm', 'date': 'tomorrow', 'moviename': 'triple 9'}},
+            {'request_slots': {}, 'diaact': 'request', 'inform_slots': {'city': 'seattle', 'numberofpeople': '2', 'theater': 'amc pacific place 11 theater', 'starttime': '9:00 pm', 'date': 'tomorrow', 'moviename': 'deadpool'}}
+        ]
 
         # Flag if we give a goal to the user
         self.get_goal = config['user']['give_goal']
