@@ -508,7 +508,7 @@ class RuleBasedUserSimulator:
             return const.FAILED_DIALOG
 
         if not self.state[const.REST_SLOTS]:
-            assert not self.state[const.REQUEST_SLOTS]
+            assert not self.state[const.REST_SLOTS]
         if self.state[const.REST_SLOTS]:
             return const.FAILED_DIALOG
 

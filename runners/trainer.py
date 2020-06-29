@@ -81,7 +81,7 @@ class Trainer:
         self.dialogue_system.agent.save_weights()
 
         # Test on the actual weights
-        # Tester(self.tester_config).run()
+        Tester(self.tester_config).run()
 
         log(['runner'], '...Warmup Ended')
 
@@ -131,12 +131,13 @@ class Trainer:
                 avg_reward = period_metrics['reward'] / self.train_freq
 
                 # Flush
-                if success_rate >= best_success_rate and success_rate >= self.success_rate_threshold:
-                    self.dialogue_system.agent.empty_memory()
+                # if success_rate >= best_success_rate and success_rate >= self.success_rate_threshold:
+                #     self.dialogue_system.agent.empty_memory()
 
                 # Update current best success rate
                 if success_rate >= best_success_rate:
                     log(['runner'], f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
+                    print(f'Episode: {episode} NEW BEST SUCCESS RATE: {success_rate} Avg Reward: {avg_reward}')
                     best_success_rate = success_rate
                     self.dialogue_system.agent.save_weights()
 
@@ -154,7 +155,7 @@ class Trainer:
                 save_json_file(self.performance_path, self.performance_metrics)
 
                 # Test on the actual weights
-                # Tester(self.tester_config).run()
+                Tester(self.tester_config).run()
 
             episode += 1
 
